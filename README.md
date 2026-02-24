@@ -52,6 +52,22 @@ Or with Compose:
 docker compose up --build
 ```
 
+## Deploy To Render (Public URL)
+
+1. Push this repo to GitHub.
+2. In Render, click `New +` -> `Blueprint`.
+3. Select your repo (Render reads `render.yaml`).
+4. Deploy and open:
+- `https://<your-render-service>.onrender.com/app`
+
+## Deploy To Railway (Public URL)
+
+1. Push this repo to GitHub.
+2. In Railway, click `New Project` -> `Deploy from GitHub repo`.
+3. Railway uses `railway.json` + `Dockerfile` automatically.
+4. After deploy, open:
+- `https://<your-railway-domain>/app`
+
 ## Share So Others Can Download
 
 1. Push this project to GitHub.

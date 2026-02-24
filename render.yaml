@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ai-teacher-assistant
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8003
+      - key: DEFAULT_MODEL_PROVIDER
+        value: openai
+      - key: CORS_ORIGINS
+        value: "*"
