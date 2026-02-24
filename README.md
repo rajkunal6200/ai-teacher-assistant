@@ -79,3 +79,14 @@ docker compose up --build
 - Frontend is now served by backend at `/app` (same-origin API calls, deployment-safe).
 - If port `8003` is busy, run with another port (example: `--port 8004`).
 - Voice features depend on system audio support and installed libraries.
+
+## Private Access (Only You + Allowed Friends)
+
+Set these in `.env` (or in Render/Railway environment variables):
+
+```bash
+APP_USERNAME=your_username
+APP_PASSWORD=your_strong_password
+```
+
+When both are set, all routes except `/health` require login (browser basic auth prompt).

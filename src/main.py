@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, Dict, Tuple
@@ -11,6 +11,8 @@ import tempfile
 import os
 import pyttsx3
 import base64
+import binascii
+import hmac
 import re
 from urllib.parse import quote
 import httpx
@@ -103,6 +105,44 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _has_valid_basic_auth(auth_header: str, expected_user: str, expected_password: str) -> bool:
+    if not auth_header.startswith("Basic "):
+        return False
+    encoded = auth_header.split(" ", 1)[1].strip()
+    if not encoded:
+        return False
+    try:
+        decoded = base64.b64decode(encoded).decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError):
+        return False
+    if ":" not in decoded:
+        return False
+    username, password = decoded.split(":", 1)
+    return hmac.compare_digest(username, expected_user) and hmac.compare_digest(password, expected_password)
+
+
+@app.middleware("http")
+async def access_control_middleware(request, call_next):
+    # Optional app lock: set APP_USERNAME and APP_PASSWORD in .env
+    expected_user = (os.getenv("APP_USERNAME") or "").strip()
+    expected_password = (os.getenv("APP_PASSWORD") or "").strip()
+    if not expected_user or not expected_password:
+        return await call_next(request)
+
+    if request.url.path == "/health":
+        return await call_next(request)
+
+    auth_header = request.headers.get("authorization", "")
+    if _has_valid_basic_auth(auth_header, expected_user, expected_password):
+        return await call_next(request)
+
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Authentication required"},
+        headers={"WWW-Authenticate": "Basic realm=\"AI Teacher Assistant\""},
+    )
 
 # ========== ENHANCED MODELS ==========
 class StudentCreate(BaseModel):
