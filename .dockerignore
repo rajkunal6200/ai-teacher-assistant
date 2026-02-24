@@ -1,0 +1,10 @@
+venv
+__pycache__
+.pytest_cache
+.DS_Store
+*.pyc
+*.pyo
+*.pyd
+test.wav
+data/ai_teacher.db
+data/uploads

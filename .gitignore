@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+*.pyc
+*.pyo
+*.pyd
+
+.env
+data/ai_teacher.db
+data/uploads/
+
+dist/

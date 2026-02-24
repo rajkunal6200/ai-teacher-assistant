@@ -1,0 +1,13 @@
+services:
+  ai-teacher:
+    build: .
+    container_name: ai-teacher-assistant
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    environment:
+      - PORT=8003
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

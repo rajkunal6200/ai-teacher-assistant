@@ -1,0 +1,4153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Teacher Assistant - Complete Sentence Voice Output</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add Three.js for 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Add Chart.js for 2D -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ========== ORIGINAL STYLES - ONLY VISUAL TOUCHUPS, NO FEATURE REMOVAL ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        
+        .tagline {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* ========== SIDEBAR - WIDTH INCREASED SLIGHTLY FOR BETTER VISIBILITY ========== */
+        .sidebar {
+            width: 620px; /* Increased further to make right panel more smaller */
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        /* ========== SCROLLING TABS - IMPROVED VISIBILITY ========== */
+        .sidebar-tabs {
+            display: block;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 15px; /* Slightly more padding */
+            flex-shrink: 0;
+            overflow: visible;
+            white-space: normal;
+            gap: 0;
+        }
+        
+        .sidebar-tabs::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .sidebar-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .sidebar-tabs::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 10px;
+        }
+
+        .tab-picker {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .tab-picker:focus {
+            outline: none;
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+        }
+        
+        .tab {
+            display: inline-flex;
+            padding: 12px 20px; /* Larger padding */
+            background: #f1f4f9; /* Light background for better visibility */
+            border: none;
+            border-radius: 30px; /* Pill shape */
+            cursor: pointer;
+            font-weight: 600;
+            color: #334155;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .tab:hover {
+            background: #e0e7ff;
+            color: #4f46e5;
+            transform: translateY(-2px);
+        }
+        
+        .tab.active {
+            color: white;
+            background: #4f46e5;
+            border-bottom: none; /* Removed bottom border since using pill */
+            box-shadow: 0 8px 16px -4px #4f46e5;
+        }
+        
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        .scroll-section {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        .scroll-section::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scroll-section::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .scroll-section::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .scroll-section::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            z-index: 10;
+        }
+        
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+            margin-left: 10px;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px; /* Slightly more rounded */
+            font-size: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px 18px; /* Slightly more padding */
+            border-radius: 30px; /* More rounded */
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4);
+        }
+        
+        button.secondary {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        
+        button.tertiary {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        
+        button.danger {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+        
+        /* ========== CLASS SELECTION ========== */
+        .class-categories {
+            margin-bottom: 15px;
+        }
+        
+        .category-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .category-btn {
+            padding: 6px 14px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .category-btn:hover {
+            background: #cbd5e1;
+        }
+        
+        .category-btn.active {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 8px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px; /* More rounded */
+        }
+        
+        .class-option {
+            padding: 8px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .class-option:hover {
+            border-color: #4f46e5;
+            background: #f5f3ff;
+        }
+        
+        .class-option.selected {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        
+        /* ========== SUBJECT SELECTION ========== */
+        .subject-categories {
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 8px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px; /* More rounded */
+            margin-bottom: 12px;
+        }
+        
+        .category-panel {
+            margin-bottom: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .category-header {
+            padding: 10px 12px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 13px;
+        }
+        
+        .category-header:hover {
+            background: #f3f4f6;
+        }
+        
+        .category-content {
+            padding: 12px;
+            background: white;
+            display: none;
+        }
+        
+        .category-content.expanded {
+            display: block;
+        }
+        
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        
+        .subject-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 6px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .subject-checkbox:hover {
+            background: #f3f4f6;
+            border-color: #4f46e5;
+        }
+        
+        .subject-checkbox input {
+            margin: 0;
+            margin-right: 6px;
+            width: auto;
+        }
+        
+        .subject-checkbox label {
+            cursor: pointer;
+            font-size: 12px;
+            flex: 1;
+        }
+        
+        /* ========== LANGUAGE SELECTION ========== */
+        .language-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 8px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px; /* More rounded */
+        }
+        
+        .language-option {
+            padding: 8px 5px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .language-option:hover {
+            border-color: #4f46e5;
+            background: #f5f3ff;
+        }
+        
+        .language-option.selected {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        
+        /* ========== TOOLS SECTION ========== */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .tool-button {
+            padding: 10px;
+            font-size: 13px;
+        }
+        
+        /* ========== VIDEO RECOMMENDATIONS ========== */
+        .video-recommendation {
+            background: linear-gradient(145deg, #fff5f5, #fff0f0);
+            border-radius: 20px; /* More rounded */
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 6px solid #ff0000;
+            box-shadow: 0 8px 20px rgba(255,0,0,0.1);
+        }
+        
+        .video-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .youtube-icon {
+            background: #ff0000;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .video-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .video-card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 30px rgba(79, 70, 229, 0.15);
+            border-color: #4f46e5;
+        }
+        
+        .video-thumbnail {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(45deg, #1e1e2f, #2d2d44);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .play-button {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,0,0,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .play-button:hover {
+            transform: scale(1.2);
+            background: #ff0000;
+        }
+        
+        .video-info {
+            padding: 10px;
+        }
+        
+        .video-name {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        
+        .video-channel {
+            font-size: 11px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* ========== 2D DIAGRAMS ========== */
+        .diagram-2d {
+            background: white;
+            border-radius: 20px; /* More rounded */
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+        }
+        
+        /* ========== 3D DIAGRAMS ========== */
+        .diagram-3d {
+            background: linear-gradient(145deg, #1e1e2f, #2a2a3c);
+            border-radius: 20px; /* More rounded */
+            padding: 15px;
+            margin: 20px 0;
+            color: white;
+        }
+        
+        .three-container {
+            width: 100%;
+            height: 220px;
+            border-radius: 16px; /* More rounded */
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        /* ========== AI NOTES ========== */
+        .ai-notes-section {
+            background: #fff9e6;
+            border-radius: 20px; /* More rounded */
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 6px solid #f59e0b;
+        }
+        
+        .notes-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .notes-icon {
+            background: #f59e0b;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px; /* More rounded */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .notes-content {
+            background: white;
+            padding: 16px;
+            border-radius: 16px; /* More rounded */
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        
+        /* ========== TOPIC SELECTOR ========== */
+        .topic-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 30px; /* More rounded */
+            border: 1px solid #e2e8f0;
+        }
+        
+        .topic-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .topic-btn:hover {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .topic-btn.active {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        /* ========== RESPONSE LANGUAGE SELECTOR ========== */
+        .response-language-container {
+            background: #f0f9ff;
+            border-radius: 20px; /* More rounded */
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 5px solid #4f46e5;
+        }
+        
+        .response-language-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #4f46e5;
+            margin-bottom: 12px;
+        }
+        
+        .response-language-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .response-lang-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .response-lang-btn:hover {
+            border-color: #4f46e5;
+            background: #f5f3ff;
+        }
+        
+        .response-lang-btn.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        
+        .current-response-language {
+            background: #4f46e5;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 30px; /* More rounded */
+            margin-top: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* ========== CHAT AREA ========== */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background: white;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+        
+        .chat-box {
+            flex: 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px; /* More rounded */
+            padding: 20px;
+            margin-bottom: 15px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 14px 18px;
+            border-radius: 18px; /* More rounded */
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        .user-message {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .ai-message {
+            background: white;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .message-header {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 14px 18px;
+            font-size: 15px;
+            border: 2px solid #4f46e5;
+            background: white;
+            border-radius: 30px; /* More rounded */
+        }
+        
+        #sendButton {
+            width: 120px;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            padding: 14px;
+            border-radius: 30px; /* More rounded */
+        }
+        
+        /* ========== STATUS ========== */
+        .status {
+            padding: 12px;
+            background: #d1fae5;
+            color: #065f46;
+            border-radius: 30px; /* More rounded */
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        /* ========== VOICE ASSISTANT ========== */
+        .voice-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .voice-button {
+            flex: 1;
+            padding: 12px;
+            font-size: 14px;
+            border-radius: 30px; /* More rounded */
+        }
+        
+        .mic-button {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+            font-size: 16px;
+            padding: 16px;
+            transition: all 0.3s;
+            border-radius: 40px; /* More rounded */
+        }
+        
+        .mic-button.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(90deg, #dc2626, #ef4444);
+        }
+        
+        .speak-button {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            font-size: 14px;
+            padding: 16px;
+            border-radius: 30px; /* More rounded */
+        }
+        
+        .voice-language-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .voice-lang-btn {
+            flex: 1;
+            padding: 10px;
+            background: #e2e8f0;
+            color: #1e293b;
+            border: 2px solid transparent;
+            border-radius: 30px; /* More rounded */
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .voice-lang-btn:hover {
+            background: #cbd5e1;
+        }
+        
+        .voice-lang-btn.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        
+        .voice-status-box {
+            margin-top: 15px;
+            padding: 16px;
+            background: #f0f9ff;
+            border-radius: 20px; /* More rounded */
+            text-align: center;
+            font-size: 14px;
+            border-left: 5px solid #4f46e5;
+            transition: all 0.3s;
+            min-height: 70px;
+        }
+        
+        .voice-history-item {
+            margin-bottom: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 16px; /* More rounded */
+            border-left: 5px solid #4f46e5;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .browser-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .ai-thinking {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+        
+        .continuous-mode-badge {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        
+        /* ========== SPEECH FIXES ========== */
+        .speech-status {
+            background: #f0f9ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* ========== FEATURES SECTION ========== */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 18px;
+            border-radius: 20px; /* More rounded */
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .feature-card h3 {
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+        
+        .feature-card p {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .api-key-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #4f46e5;
+            border-radius: 16px; /* More rounded */
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .model-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px; /* More rounded */
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        /* ========== RESPONSIVE DESIGN ========== */
+        @media (max-width: 1100px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .subject-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .container {
+                height: auto;
+                min-height: 100vh;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .subject-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .class-grid {
+                grid-template-columns: 1fr;
+            }
+            .language-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ===== EXECUTIVE REDESIGN PATCH (NO FEATURE CHANGES) ===== */
+        :root {
+            --ex-bg: #eef3f8;
+            --ex-surface: #ffffff;
+            --ex-surface-2: #f8fbff;
+            --ex-line: #d5deea;
+            --ex-line-strong: #c4d1e1;
+            --ex-text: #0b1220;
+            --ex-muted: #4b5568;
+            --ex-brand: #0f3e91;
+            --ex-brand-2: #1d4ed8;
+            --ex-success: #0f766e;
+            --ex-warning: #a16207;
+            --ex-danger: #b91c1c;
+            --ex-shadow-xs: 0 1px 3px rgba(11, 18, 32, 0.08);
+            --ex-shadow-sm: 0 8px 18px rgba(11, 18, 32, 0.08);
+            --ex-shadow-md: 0 14px 28px rgba(11, 18, 32, 0.12);
+            --ex-shadow-lg: 0 26px 54px rgba(11, 18, 32, 0.16);
+            --ex-radius-xl: 18px;
+            --ex-radius-lg: 14px;
+            --ex-radius-md: 10px;
+        }
+
+        * {
+            font-family: 'Manrope', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, .section-title, .video-title {
+            font-family: 'Sora', 'Manrope', sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        body {
+            color: var(--ex-text);
+            background:
+                radial-gradient(1000px 500px at -10% -20%, rgba(15, 62, 145, 0.12), transparent 60%),
+                radial-gradient(900px 420px at 110% -10%, rgba(29, 78, 216, 0.10), transparent 60%),
+                linear-gradient(180deg, #eaf0f7 0%, var(--ex-bg) 100%);
+        }
+
+        .container {
+            background: var(--ex-surface);
+            border: 1px solid var(--ex-line);
+            border-radius: var(--ex-radius-xl);
+            box-shadow: var(--ex-shadow-lg);
+        }
+
+        header {
+            background: linear-gradient(100deg, #0b1220 0%, #12306b 52%, #1d4ed8 100%);
+            box-shadow: 0 10px 24px rgba(11, 18, 32, 0.24);
+        }
+
+        h1 {
+            font-size: clamp(1.45rem, 1.9vw, 2rem);
+        }
+
+        .tagline {
+            font-weight: 500;
+            opacity: 0.96;
+        }
+
+        .status {
+            border-radius: var(--ex-radius-md);
+            border: 1px solid #bde8d5;
+            background: linear-gradient(90deg, #e9fbf2, #e7f3ff);
+            color: #14532d;
+            box-shadow: var(--ex-shadow-xs);
+        }
+
+        .main-content {
+            gap: 0;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #f9fbff 0%, #f4f8fd 100%);
+            border-right-color: var(--ex-line);
+        }
+
+        .sidebar-tabs {
+            background: rgba(255, 255, 255, 0.94);
+            border-bottom-color: var(--ex-line);
+            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        .tab {
+            background: #e6edf6;
+            color: #334155;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            box-shadow: none;
+        }
+
+        .tab:hover {
+            background: #dbe7f5;
+            color: #0f172a;
+            border-color: #c6d5e7;
+            transform: translateY(-1px);
+        }
+
+        .tab.active {
+            background: linear-gradient(90deg, var(--ex-brand), var(--ex-brand-2));
+            color: #fff;
+            box-shadow: var(--ex-shadow-sm);
+        }
+
+        .tab-content {
+            background: transparent;
+        }
+
+        .section {
+            padding: 18px;
+            border-radius: var(--ex-radius-lg);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            border: 1px solid var(--ex-line);
+            box-shadow: var(--ex-shadow-xs);
+        }
+
+        .section-title {
+            color: #1f2a3d;
+            background: transparent;
+        }
+
+        .section-title::after {
+            background: linear-gradient(90deg, #d9e3ef, #c9d7e6);
+        }
+
+        select, input, .model-select, .api-key-input {
+            border-color: var(--ex-line-strong);
+            border-radius: var(--ex-radius-md);
+            background: #ffffff;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        }
+
+        select:focus, input:focus {
+            border-color: var(--ex-brand-2);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.16);
+        }
+
+        button {
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--ex-brand), var(--ex-brand-2));
+            box-shadow: var(--ex-shadow-sm);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--ex-shadow-md);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, var(--ex-success), #0d9488);
+        }
+
+        button.tertiary {
+            background: linear-gradient(90deg, var(--ex-warning), #d97706);
+        }
+
+        button.danger,
+        .mic-button {
+            background: linear-gradient(90deg, var(--ex-danger), #dc2626);
+        }
+
+        .category-btn,
+        .topic-btn,
+        .voice-lang-btn,
+        .response-lang-btn,
+        .language-option,
+        .class-option {
+            border: 1px solid var(--ex-line-strong);
+            background: #eef3f9;
+            color: #334155;
+        }
+
+        .category-btn:hover,
+        .topic-btn:hover,
+        .voice-lang-btn:hover,
+        .response-lang-btn:hover,
+        .language-option:hover,
+        .class-option:hover {
+            background: #e1eaf6;
+            border-color: #b8cae0;
+        }
+
+        .category-btn.active,
+        .topic-btn.active,
+        .voice-lang-btn.active,
+        .response-lang-btn.active,
+        .language-option.selected,
+        .class-option.selected {
+            border-color: transparent;
+            color: #ffffff;
+            background: linear-gradient(90deg, var(--ex-brand), var(--ex-brand-2));
+        }
+
+        .response-language-container,
+        .voice-status-box,
+        .ai-notes-section,
+        .diagram-2d,
+        .video-recommendation {
+            border: 1px solid var(--ex-line);
+            box-shadow: var(--ex-shadow-xs);
+        }
+
+        .response-language-container {
+            background: linear-gradient(180deg, #eff6ff 0%, #f7faff 100%);
+            border-left-color: var(--ex-brand-2);
+        }
+
+        .current-response-language {
+            background: linear-gradient(90deg, var(--ex-brand), var(--ex-brand-2));
+        }
+
+        .chat-area {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        }
+
+        .chat-header {
+            border-bottom-color: var(--ex-line);
+        }
+
+        .chat-header h2 {
+            font-size: 1.2rem;
+        }
+
+        .chat-box {
+            border-color: var(--ex-line);
+            background: linear-gradient(180deg, #f9fbff 0%, #f3f7fd 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .user-message {
+            background: linear-gradient(90deg, var(--ex-brand), #2563eb);
+            box-shadow: var(--ex-shadow-sm);
+        }
+
+        .ai-message {
+            border-color: var(--ex-line);
+            box-shadow: var(--ex-shadow-xs);
+        }
+
+        .video-card,
+        .feature-card {
+            border-color: var(--ex-line);
+            background: #ffffff;
+            box-shadow: var(--ex-shadow-xs);
+        }
+
+        .video-card:hover,
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--ex-shadow-md);
+        }
+
+        .video-recommendation {
+            background: linear-gradient(160deg, #fffdf8 0%, #fff6f7 100%);
+            border-left-color: #dc2626;
+        }
+
+        .diagram-3d {
+            background: linear-gradient(145deg, #0f172a, #1f2a3a);
+            border: 1px solid #334155;
+        }
+
+        .features {
+            background: var(--ex-surface-2);
+            border-top-color: var(--ex-line);
+        }
+
+        button, .tab, .topic-btn, .category-btn, .language-option, .response-lang-btn, .voice-lang-btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        .tab:focus-visible {
+            outline: 3px solid rgba(29, 78, 216, 0.24);
+            outline-offset: 2px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        @media (max-width: 1100px) {
+            .container {
+                border-radius: 14px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 12px;
+            }
+
+            .sidebar-tabs {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .tab {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+
+            .response-lang-btn,
+            .voice-lang-btn,
+            .topic-btn {
+                min-width: calc(50% - 8px);
+            }
+        }
+
+        .header-toolbar {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-search {
+            flex: 1;
+            min-width: 260px;
+            max-width: 620px;
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 999px;
+            padding: 6px;
+        }
+
+        #globalAskInput {
+            margin: 0;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+
+        #globalAskInput:focus {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
+        }
+
+        .mini-action {
+            width: auto;
+            min-width: 120px;
+            margin: 0;
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .dash-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            border: 1px solid var(--ex-line);
+            border-radius: var(--ex-radius-md);
+            padding: 14px;
+            box-shadow: var(--ex-shadow-xs);
+        }
+
+        .dash-kpi {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: var(--ex-brand);
+            margin-top: 6px;
+            line-height: 1;
+        }
+
+        .dash-muted {
+            color: var(--ex-muted);
+            font-size: 12px;
+        }
+
+        .dash-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .dash-actions button {
+            margin: 0;
+            padding: 11px;
+            font-size: 12px;
+        }
+
+        .header-action {
+            width: auto;
+            min-width: 118px;
+            margin: 0;
+            padding: 9px 12px;
+            font-size: 12px;
+        }
+
+        body.focus-mode .sidebar,
+        body.focus-mode .features {
+            display: none;
+        }
+
+        body.focus-mode .chat-area {
+            width: 100%;
+            max-width: 100%;
+            flex: 1;
+            padding: 22px;
+        }
+
+        body.focus-mode .main-content {
+            display: block;
+        }
+
+        body.focus-mode .container {
+            max-width: 1200px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid,
+            .dash-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .header-search {
+                min-width: 100%;
+            }
+
+            .header-toolbar {
+                justify-content: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- EVERYTHING BELOW IS 100% ORIGINAL - NOTHING REMOVED OR CHANGED -->
+    <div class="container">
+        <header>
+            <h1>🎓 AI Teacher Assistant</h1>
+            <div class="tagline">✅ COMPLETE SENTENCE Voice Output • Continuous Voice Input • Video • 2D/3D • Notes</div>
+            <div class="header-toolbar">
+                <div class="header-search">
+                    <input id="globalAskInput" type="text" placeholder="Ask anything quickly... (press Enter)" onkeypress="if(event.key==='Enter') askFromGlobal()">
+                    <button class="mini-action" onclick="askFromGlobal()">⚡ Ask AI</button>
+                </div>
+                <button class="mini-action secondary" onclick="goToTab('dashboard')">🧭 Dashboard</button>
+            </div>
+        </header>
+        
+        <div class="status" id="status">
+            <span>🔵</span> Voice Output FIXED: Now speaks FULL sentences without stopping! • NEW: Video + 2D/3D + Notes added!
+        </div>
+        
+        <div class="main-content">
+            <!-- Left Sidebar with option chooser -->
+            <div class="sidebar">
+                <div class="sidebar-tabs">
+                    <select id="tabPicker" class="tab-picker" onchange="switchTab(this.value, this)">
+                        <option value="registration" selected>📝 Register</option>
+                        <option value="voice">🎤 Voice</option>
+                        <option value="dashboard">🧭 Dashboard</option>
+                        <option value="videos">📺 Videos</option>
+                        <option value="diagrams">🎮 2D/3D</option>
+                        <option value="notes">📝 Notes</option>
+                        <option value="subjects">📚 Subjects</option>
+                        <option value="tools">⚡ Tools</option>
+                        <option value="api">🔑 AI</option>
+                    </select>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- ========== DASHBOARD TAB ========== -->
+                    <div class="tab-pane" id="dashboard-tab">
+                        <div class="scroll-section">
+                            <div class="section">
+                                <div class="section-title">🧭 Smart Dashboard</div>
+                                <div class="dashboard-grid">
+                                    <div class="dash-card">
+                                        <div class="dash-muted">Registered Student</div>
+                                        <div class="dash-kpi" id="dashStudent">No</div>
+                                        <div class="dash-muted" id="dashStudentName">Complete registration tab</div>
+                                    </div>
+                                    <div class="dash-card">
+                                        <div class="dash-muted">Selected Subjects</div>
+                                        <div class="dash-kpi" id="dashSubjects">0</div>
+                                        <div class="dash-muted">From your subject categories</div>
+                                    </div>
+                                    <div class="dash-card">
+                                        <div class="dash-muted">Voice Commands</div>
+                                        <div class="dash-kpi" id="dashVoice">0</div>
+                                        <div class="dash-muted">Saved in history</div>
+                                    </div>
+                                    <div class="dash-card">
+                                        <div class="dash-muted">Current AI Model</div>
+                                        <div class="dash-kpi" id="dashModel" style="font-size: 1.15rem;">ChatGPT</div>
+                                        <div class="dash-muted">Change in AI tab</div>
+                                    </div>
+                                </div>
+                                <div class="dash-actions">
+                                    <button onclick="goToTab('voice')">🎤 Open Voice</button>
+                                    <button onclick="goToTab('videos')">📺 Open Videos</button>
+                                    <button onclick="goToTab('diagrams')">🎮 Open 2D/3D</button>
+                                    <button onclick="goToTab('notes')">📝 Open Notes</button>
+                                    <button onclick="goToTab('registration')">📝 Register Student</button>
+                                    <button onclick="goToTab('subjects')">📚 Pick Subjects</button>
+                                    <button onclick="goToTab('tools')">⚡ Study Tools</button>
+                                    <button onclick="goToTab('api')">🔑 AI Setup</button>
+                                </div>
+                            </div>
+                            <div class="section">
+                                <div class="section-title">🚀 Quick Prompts</div>
+                                <div class="dash-actions">
+                                    <button onclick="quickQuestion('Explain photosynthesis with diagram and quiz')">🌿 Bio Prompt</button>
+                                    <button onclick="quickQuestion('Teach Newton laws in easy steps')">⚡ Physics Prompt</button>
+                                    <button onclick="quickQuestion('Give me a 7-day revision plan')">📅 Study Plan</button>
+                                    <button onclick="quickQuestion('Teach Python loops with examples')">🐍 Coding Prompt</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== VOICE TAB ========== -->
+                    <div class="tab-pane" id="voice-tab">
+                        <div class="scroll-section">
+                            <!-- CONTINUOUS VOICE BADGE -->
+                            <div class="continuous-mode-badge">
+                                🔴 Continuous Voice Mode - Click ONCE, speak MULTIPLE times!
+                            </div>
+                            
+                            <!-- ===== RESPONSE LANGUAGE SELECTOR ===== -->
+                            <div class="response-language-container">
+                                <div class="response-language-title">
+                                    <span style="font-size: 20px;">🌐</span> 
+                                    <span>STEP 1: Choose Response Language (I will reply in this language)</span>
+                                </div>
+                                
+                                <div class="response-language-buttons">
+                                    <button id="respLangEn" class="response-lang-btn active" onclick="setResponseLanguage('en')">
+                                        🇺🇸 English
+                                    </button>
+                                    <button id="respLangHi" class="response-lang-btn" onclick="setResponseLanguage('hi')">
+                                        🇮🇳 हिंदी
+                                    </button>
+                                    <button id="respLangTa" class="response-lang-btn" onclick="setResponseLanguage('ta')">
+                                        🇮🇳 தமிழ்
+                                    </button>
+                                    <button id="respLangTe" class="response-lang-btn" onclick="setResponseLanguage('te')">
+                                        🇮🇳 తెలుగు
+                                    </button>
+                                    <button id="respLangMr" class="response-lang-btn" onclick="setResponseLanguage('mr')">
+                                        🇮🇳 मराठी
+                                    </button>
+                                    <button id="respLangBn" class="response-lang-btn" onclick="setResponseLanguage('bn')">
+                                        🇮🇳 বাংলা
+                                    </button>
+                                </div>
+                                
+                                <div id="currentResponseLanguage" class="current-response-language">
+                                    <span>🔵</span> Current Response Language: English - I will reply in English
+                                </div>
+                                <p style="font-size: 12px; color: #64748b; margin-top: 10px;">
+                                    ✨ Change ANYTIME - Ask same question again to get it in new language!
+                                </p>
+                            </div>
+                            
+                            <!-- Voice Input Section -->
+                            <div class="section">
+                                <div class="section-title">🎤 STEP 2: Continuous Voice Input</div>
+                                <p style="margin-bottom: 12px; color: #6b7280; font-size: 13px;" id="browserInfo">
+                                    <span id="browserSpecific" style="display: inline-block; padding: 4px 12px; background: #e0f2fe; border-radius: 20px; color: #0369a1;"></span>
+                                </p>
+                                
+                                <!-- Voice Input Language -->
+                                <div class="voice-language-selector">
+                                    <button id="voiceLangEnBtn" class="voice-lang-btn active" onclick="setVoiceInputLanguage('en')">🇺🇸 English</button>
+                                    <button id="voiceLangHiBtn" class="voice-lang-btn" onclick="setVoiceInputLanguage('hi')">🇮🇳 हिंदी</button>
+                                    <button id="voiceLangTaBtn" class="voice-lang-btn" onclick="setVoiceInputLanguage('ta')">🇮🇳 தமிழ்</button>
+                                    <button id="voiceLangTeBtn" class="voice-lang-btn" onclick="setVoiceInputLanguage('te')">🇮🇳 తెలుగు</button>
+                                    <button id="voiceLangMrBtn" class="voice-lang-btn" onclick="setVoiceInputLanguage('mr')">🇮🇳 मराठी</button>
+                                    <button id="voiceLangBnBtn" class="voice-lang-btn" onclick="setVoiceInputLanguage('bn')">🇮🇳 বাংলা</button>
+                                </div>
+                                
+                                <!-- Voice Button -->
+                                <button id="voiceMainButton" onclick="toggleContinuousVoice()" 
+                                        class="mic-button voice-button"
+                                        style="font-size: 20px; padding: 20px; margin: 15px 0;">
+                                    🎤 START CONTINUOUS VOICE
+                                </button>
+                                
+                                <!-- Voice Status -->
+                                <div id="voiceStatus" class="voice-status-box">
+                                    <span id="statusIcon">⚡</span> 
+                                    <span id="statusText">Click START - Speak multiple times without clicking again!</span>
+                                </div>
+                                
+                                <!-- Voice Commands Hint -->
+                                <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #10b981;">
+                                    <span style="font-weight: 700; color: #10b981;">🎯 CONTINUOUS MODE:</span><br>
+                                    • Click START once → Speak → I respond → You speak again → I respond again<br>
+                                    • No need to click repeatedly!<br>
+                                    • Click STOP when done
+                                </div>
+                                
+                                <!-- Voice Settings -->
+                                <div style="display: flex; gap: 12px; margin-top: 15px; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Voice Speed</label>
+                                        <input type="range" id="voiceSpeed" min="0.5" max="2" step="0.1" value="1" style="width: 100%;">
+                                        <span id="speedValue" style="font-size: 11px; color: #4b5563;">1.0x</span>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Voice Pitch</label>
+                                        <input type="range" id="voicePitch" min="0.5" max="2" step="0.1" value="1" style="width: 100%;">
+                                        <span id="pitchValue" style="font-size: 11px; color: #4b5563;">1.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Voice Output Section -->
+                            <div class="section">
+                                <div class="section-title">🔊 STEP 3: Voice Output</div>
+                                <div style="background: #f0f9ff; padding: 15px; border-radius: 10px; border-left: 5px solid #3b82f6;">
+                                    <span style="font-weight: 700; color: #3b82f6;">✅ Voice output is ready.</span>
+                                    <ul style="margin-top: 10px; margin-left: 20px; color: #1e293b;">
+                                        <li>🔊 Speaks the full response clearly</li>
+                                        <li>⏱️ Waits until speech is complete</li>
+                                        <li>🔄 Tries again if speech is interrupted</li>
+                                        <li>🌐 Works with all 6 languages</li>
+                                    </ul>
+                                </div>
+                                
+                                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                    <button onclick="speakLastResponse()" class="speak-button" style="flex: 2; background: linear-gradient(90deg, #3b82f6, #60a5fa);">
+                                        🔊 SPEAK FULL RESPONSE
+                                    </button>
+                                    <button onclick="stopAllVoice()" class="danger" style="flex: 1;">
+                                        ⏹️ STOP
+                                    </button>
+                                </div>
+                                <div id="speechStatus" style="margin-top: 10px; font-size: 12px; color: #6b7280; text-align: center;">
+                                    ✅ Voice output ready
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Commands -->
+                            <div class="section">
+                                <div class="section-title">📋 Quick Questions</div>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                                    <button onclick="quickQuestion('Explain photosynthesis')" style="background: #10b981; padding: 10px; font-size: 13px;">🌿 Photosynthesis</button>
+                                    <button onclick="quickQuestion('What is quantum physics?')" style="background: #10b981; padding: 10px; font-size: 13px;">⚛️ Quantum</button>
+                                    <button onclick="quickQuestion('How does heart work?')" style="background: #f59e0b; padding: 10px; font-size: 13px;">❤️ Heart</button>
+                                    <button onclick="quickQuestion('What is DNA?')" style="background: #f59e0b; padding: 10px; font-size: 13px;">🧬 DNA</button>
+                                    <button onclick="quickQuestion('Newton laws')" style="background: #8b5cf6; padding: 10px; font-size: 13px;">⚡ Newton</button>
+                                    <button onclick="quickQuestion('Python basics')" style="background: #8b5cf6; padding: 10px; font-size: 13px;">🐍 Python</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Voice History -->
+                            <div class="section">
+                                <div class="section-title">📝 Voice History</div>
+                                <div id="voiceHistory" style="max-height: 180px; overflow-y: auto; padding: 10px; background: white; border: 1px solid #e5e7eb; border-radius: 8px;">
+                                    <div style="text-align: center; color: #9ca3af; padding: 15px;">No voice commands yet</div>
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                                    <button onclick="clearVoiceHistory()" class="danger" style="flex: 1; padding: 10px;">🗑️ Clear</button>
+                                    <button onclick="speakLastResponse()" class="speak-button" style="flex: 1; padding: 10px;">🔊 Speak</button>
+                                    <button onclick="stopAllVoice()" class="danger" style="flex: 1; padding: 10px;">⏹️ Stop</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== VIDEOS TAB ========== -->
+                    <div class="tab-pane" id="videos-tab">
+                        <div class="scroll-section">
+                            <div class="video-recommendation">
+                                <div class="video-header">
+                                    <div class="youtube-icon">
+                                        <i class="fab fa-youtube"></i>
+                                    </div>
+                                    <div>
+                                        <div class="video-title">📺 AI Recommended Videos</div>
+                                        <div style="color: #64748b; font-size: 12px;">Curated educational content for your learning</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Topic Selector -->
+                                <div class="topic-selector">
+                                    <button class="topic-btn active" onclick="loadVideos('photosynthesis')">🌿 Photosynthesis</button>
+                                    <button class="topic-btn" onclick="loadVideos('quantum')">⚛️ Quantum</button>
+                                    <button class="topic-btn" onclick="loadVideos('heart')">❤️ Heart</button>
+                                    <button class="topic-btn" onclick="loadVideos('dna')">🧬 DNA</button>
+                                    <button class="topic-btn" onclick="loadVideos('newton')">⚡ Newton</button>
+                                    <button class="topic-btn" onclick="loadVideos('python')">🐍 Python</button>
+                                </div>
+
+                                <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+                                    <input id="videoSearchInput" type="text" placeholder="Search YouTube videos (e.g., class 10 photosynthesis explanation)" style="margin-bottom: 0; flex: 1;">
+                                    <button onclick="searchVideos()" style="width: auto; min-width: 130px; margin-bottom: 0;">🔎 Search</button>
+                                </div>
+                                
+                                <!-- Video Container -->
+                                <div id="videoContainer">
+                                    <!-- Videos will be loaded here -->
+                                </div>
+                                
+                                <!-- Video Explanation -->
+                                <div style="margin-top: 20px; background: white; padding: 16px; border-radius: 12px;">
+                                    <h4 style="display: flex; align-items: center; gap: 8px; color: #ff0000; margin-bottom: 10px;">
+                                        <i class="fas fa-robot"></i> AI Video Explanation
+                                    </h4>
+                                    <div id="videoExplanation" style="font-size: 14px; line-height: 1.6;">
+                                        Select a topic to see recommended educational videos
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== 2D/3D DIAGRAMS TAB ========== -->
+                    <div class="tab-pane" id="diagrams-tab">
+                        <div class="scroll-section">
+                            <!-- Topic Selector -->
+                            <div class="topic-selector">
+                                <button class="topic-btn active" onclick="updateDiagrams('photosynthesis')">🌿 Photosynthesis</button>
+                                <button class="topic-btn" onclick="updateDiagrams('quantum')">⚛️ Quantum</button>
+                                <button class="topic-btn" onclick="updateDiagrams('heart')">❤️ Heart</button>
+                                <button class="topic-btn" onclick="updateDiagrams('dna')">🧬 DNA</button>
+                                <button class="topic-btn" onclick="updateDiagrams('newton')">⚡ Newton</button>
+                                <button class="topic-btn" onclick="updateDiagrams('python')">🐍 Python</button>
+                            </div>
+                            
+                            <!-- 3D Diagram -->
+                            <div class="diagram-3d">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <i class="fas fa-cube" style="color: #4f46e5; font-size: 20px;"></i>
+                                    <h4 style="color: white;">3D Interactive Model</h4>
+                                </div>
+                                <div id="diagram3d-container" class="three-container">
+                                    <!-- 3D will be rendered here -->
+                                </div>
+                                <p id="diagram3d-label" style="text-align: center; margin-top: 10px; color: #94a3b8; font-size: 13px;">
+                                    3D Chloroplast Structure - Rotating
+                                </p>
+                            </div>
+                            
+                            <!-- 2D Diagram -->
+                            <div class="diagram-2d">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                    <i class="fas fa-chart-line" style="color: #10b981; font-size: 20px;"></i>
+                                    <h4 style="color: #0f172a;">2D Educational Diagram</h4>
+                                </div>
+                                <div id="diagram2d-container" style="height: 200px;">
+                                    <!-- 2D chart will be rendered here -->
+                                </div>
+                                <p id="diagram2d-label" style="text-align: center; margin-top: 10px; color: #64748b; font-size: 13px;">
+                                    Photosynthesis Process Flow
+                                </p>
+                            </div>
+                            
+                            <!-- AI Diagram Explanation -->
+                            <div class="ai-notes-section" style="background: #f0f7ff; border-left-color: #4f46e5;">
+                                <div class="notes-header">
+                                    <div class="notes-icon" style="background: #4f46e5;">
+                                        <i class="fas fa-brain"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="font-size: 16px; color: #0f172a;">AI Diagram Explanation</h4>
+                                    </div>
+                                </div>
+                                <div id="diagramExplanation" style="background: white; padding: 16px; border-radius: 12px; font-size: 14px;">
+                                    Select a topic to see interactive 2D/3D diagrams with AI explanation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== NOTES TAB ========== -->
+                    <div class="tab-pane" id="notes-tab">
+                        <div class="scroll-section">
+                            <!-- Topic Selector -->
+                            <div class="topic-selector">
+                                <button class="topic-btn active" onclick="updateNotes('photosynthesis')">🌿 Photosynthesis</button>
+                                <button class="topic-btn" onclick="updateNotes('quantum')">⚛️ Quantum</button>
+                                <button class="topic-btn" onclick="updateNotes('heart')">❤️ Heart</button>
+                                <button class="topic-btn" onclick="updateNotes('dna')">🧬 DNA</button>
+                                <button class="topic-btn" onclick="updateNotes('newton')">⚡ Newton</button>
+                                <button class="topic-btn" onclick="updateNotes('python')">🐍 Python</button>
+                            </div>
+                            
+                            <!-- AI Notes -->
+                            <div class="ai-notes-section">
+                                <div class="notes-header">
+                                    <div class="notes-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="font-size: 16px; color: #0f172a;">AI Generated Study Notes</h4>
+                                    </div>
+                                </div>
+                                <div id="aiNotesContent" class="notes-content">
+                                    <h4 style="color: #4f46e5; margin-bottom: 10px;">📌 Photosynthesis</h4>
+                                    <ul style="list-style-type: none; padding-left: 0;">
+                                        <li style="margin-bottom: 8px;"><i class="fas fa-check-circle" style="color: #10b981;"></i> Process: Light energy → Chemical energy</li>
+                                        <li style="margin-bottom: 8px;"><i class="fas fa-check-circle" style="color: #10b981;"></i> Equation: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂</li>
+                                        <li style="margin-bottom: 8px;"><i class="fas fa-check-circle" style="color: #10b981;"></i> Location: Chloroplasts (chlorophyll)</li>
+                                        <li style="margin-bottom: 8px;"><i class="fas fa-check-circle" style="color: #10b981;"></i> Stages: Light reaction & Calvin cycle</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== REGISTRATION TAB ========== -->
+                    <div class="tab-pane active" id="registration-tab">
+                        <div class="scroll-section">
+                            <div class="section">
+                                <div class="section-title">👤 Personal Information</div>
+                                <input type="text" id="studentName" placeholder="Full Name" required>
+                                <input type="text" id="schoolName" placeholder="School/College Name" required>
+                                <input type="tel" id="mobileNumber" placeholder="Mobile Number (10 digits)" required>
+                                <input type="email" id="studentEmail" placeholder="Email (optional)">
+                            </div>
+                            
+                            <div class="section">
+                                <div class="section-title">📖 Select Class</div>
+                                <div class="class-categories">
+                                    <div class="category-buttons">
+                                        <button class="category-btn active" onclick="filterClasses('all')">All</button>
+                                        <button class="category-btn" onclick="filterClasses('school')">School</button>
+                                        <button class="category-btn" onclick="filterClasses('ug')">UG</button>
+                                        <button class="category-btn" onclick="filterClasses('pg')">PG</button>
+                                    </div>
+                                    <div class="class-grid" id="classGrid"></div>
+                                </div>
+                            </div>
+
+                            <div class="section">
+                                <div class="section-title">🤖 AI Subject Suggestions (By Class)</div>
+                                <div id="aiSubjectSuggestions" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; color: #64748b;">
+                                    Select a class above to get AI-recommended subjects you can select or start learning immediately.
+                                </div>
+                            </div>
+                            
+                            <div class="section">
+                                <div class="section-title">🌐 Your Preferred Language</div>
+                                <div class="language-grid" id="languageGrid"></div>
+                            </div>
+                            
+                            <button onclick="registerStudent()" class="secondary">🏫 Complete Registration</button>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== SUBJECTS TAB ========== -->
+                    <div class="tab-pane" id="subjects-tab">
+                        <div class="scroll-section">
+                            <div class="section">
+                                <div class="section-title">📚 Select Your Subjects</div>
+                                <div class="subject-categories" id="subjectCategories"></div>
+                                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                    <button onclick="selectAllSubjects()" style="flex: 1; background: #10b981; padding: 12px;">✅ Select All</button>
+                                    <button onclick="deselectAllSubjects()" style="flex: 1; background: #ef4444; padding: 12px;">❌ Clear All</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== TOOLS TAB ========== -->
+                    <div class="tab-pane" id="tools-tab">
+                        <div class="scroll-section">
+                            <div class="section">
+                                <div class="section-title">📊 Study Tools</div>
+                                <div class="tools-grid">
+                                    <button onclick="openNotepad()" class="tool-button">📝 Notepad</button>
+                                    <button onclick="openCalculator()" class="tool-button">🧮 Calculator</button>
+                                    <button onclick="openDictionary()" class="tool-button">📖 Dictionary</button>
+                                    <button onclick="openConverter()" class="tool-button">🔄 Converter</button>
+                                    <button onclick="openTimer()" class="tool-button">⏱️ Timer</button>
+                                    <button onclick="openPlanner()" class="tool-button">📅 Planner</button>
+                                    <button onclick="openFlashcards()" class="tool-button">🃏 Flashcards</button>
+                                    <button onclick="openMindMap()" class="tool-button">🗺️ Mind Map</button>
+                                </div>
+                            </div>
+                            
+                            <div class="section">
+                                <div class="section-title">🎮 3D Visualizations</div>
+                                <div class="tools-grid">
+                                    <button onclick="open3DViewer('math')" class="tertiary tool-button">🧮 Math</button>
+                                    <button onclick="open3DViewer('anatomy')" class="tertiary tool-button">🫀 Anatomy</button>
+                                    <button onclick="open3DViewer('chemistry')" class="tertiary tool-button">⚗️ Molecules</button>
+                                    <button onclick="open3DViewer('physics')" class="tertiary tool-button">⚛️ Physics</button>
+                                    <button onclick="open3DViewer('astronomy')" class="tertiary tool-button">🌌 Solar</button>
+                                    <button onclick="open3DViewer('biology')" class="tertiary tool-button">🧬 Cell</button>
+                                </div>
+                            </div>
+                            
+                            <div class="section">
+                                <div class="section-title">⚙️ System</div>
+                                <div class="tools-grid">
+                                    <button onclick="clearChat()" class="danger tool-button">🗑️ Clear Chat</button>
+                                    <button onclick="exportData()" class="tertiary tool-button">📤 Export</button>
+                                    <button onclick="showHelp()" class="secondary tool-button">❓ Help</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========== API TAB ========== -->
+                    <div class="tab-pane" id="api-tab">
+                        <div class="scroll-section">
+                            <div class="section">
+                                <div class="section-title">🤖 AI Model Provider</div>
+                                <p style="color: #6b7280; margin-bottom: 15px; font-size: 13px;">
+                                    Select provider and model name. The server reads API keys from `.env`.
+                                </p>
+                                
+                                <select id="aiModelSelect" class="model-select" onchange="changeAIModel()">
+                                    <option value="openai">🤖 OpenAI</option>
+                                    <option value="gemini">🌀 Gemini</option>
+                                    <option value="deepseek">🧠 DeepSeek</option>
+                                </select>
+
+                                <input type="text" id="aiModelNameInput" class="api-key-input" placeholder="Model name (optional)">
+                                <button onclick="saveModelName()" style="background: #4f46e5; margin-bottom: 10px;">💾 Save Model Name</button>
+                                
+                                <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 10px;">
+                                    <h4 style="color: #1e293b; margin-bottom: 10px; font-size: 14px;">🔐 Get Free API Keys:</h4>
+                                    <p style="font-size: 12px; margin-bottom: 5px;">• OpenAI: platform.openai.com/api-keys</p>
+                                    <p style="font-size: 12px; margin-bottom: 5px;">• Google Gemini: makersuite.google.com/app/apikey</p>
+                                    <p style="font-size: 12px;">• DeepSeek: platform.deepseek.com/api_keys</p>
+                                </div>
+                                
+                                <div style="margin-top: 15px;" id="apiStatus">
+                                    <span id="apiStatusBadge" style="display: inline-block; padding: 8px 16px; background: #e0f2fe; border-radius: 30px; color: #075985; font-size: 12px;">
+                                        ℹ️ Server uses `.env` API keys
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== RIGHT CHAT AREA ========== -->
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="color: #4f46e5; margin-bottom: 5px;">AI Teacher Assistant</h2>
+                            <p style="color: #6b7280; font-size: 13px;">
+                                <span id="studentInfoDisplay">👤 Not registered</span> • 
+                                <span id="responseLangDisplay">🌐 Response: English</span> • 
+                                <span id="aiModelDisplay">🤖 ChatGPT</span>
+                                <span style="margin-left: 10px;">📺 Video • 🎮 2D/3D • 📝 Notes</span>
+                            </p>
+                        </div>
+                        <div>
+                            <span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 30px; font-size: 11px; font-weight: 600;">
+                                🔴 Continuous Voice
+                            </span>
+                            <button class="header-action tertiary" id="focusModeBtn" onclick="toggleFocusMode()">
+                                🎯 Focus Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-box" id="chatBox">
+                    <div class="message ai-message">
+                        <div class="message-header">
+                            🤖 <strong>AI Teacher</strong>
+                            <span style="background: #4f46e5; color: white; padding: 4px 10px; border-radius: 30px; font-size: 10px;">ALL FEATURES</span>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <strong>✨ COMPLETE PLATFORM - ALL FEATURES IN SCROLLING TABS!</strong><br><br>
+                            
+                            🎤 <strong>Voice Tab:</strong> Continuous Voice • 6 Languages • Complete Sentences<br>
+                            📺 <strong>Videos Tab:</strong> 24+ Educational Videos • AI Recommendations<br>
+                            🎮 <strong>2D/3D Tab:</strong> Interactive 3D Models • 2D Charts • AI Explanations<br>
+                            📝 <strong>Notes Tab:</strong> AI-Generated Study Notes • Key Concepts<br>
+                            📝 <strong>Register Tab:</strong> Student Registration • Class Selection<br>
+                            📚 <strong>Subjects Tab:</strong> 50+ Subjects • Select/Clear All<br>
+                            ⚡ <strong>Tools Tab:</strong> Notepad • Calculator • Dictionary • 3D Views<br>
+                            🔑 <strong>AI Tab:</strong> 6 AI Models • API Configuration<br><br>
+                            
+                            <span style="background: #dbeafe; padding: 10px; border-radius: 8px; display: block; border-left: 4px solid #3b82f6;">
+                                👉 Scroll the tabs horizontally to access ALL 8 features!
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Type in ANY language - English, हिंदी, தமிழ், తెలుగు, मराठी, বাংলা..." onkeypress="if(event.key=='Enter') sendMessage()">
+                    <button id="sendButton" onclick="sendMessage()">📤 Send</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // ========== YOUR EXISTING CODE - 100% INTACT ==========
+        // ========== CONFIGURATION ==========
+        let studentId = null;
+        let studentName = '';
+        let studentLanguage = 'english';
+        let studentClass = '';
+        let selectedSubjects = new Set();
+        let voiceHistory = [];
+        let voiceInputLanguage = 'en';
+        let responseLanguage = 'en';
+        let recognition = null;
+        let isListening = false;
+        let isContinuousMode = false;
+        let isFocusMode = false;
+        let lastAiResponseForSpeech = '';
+        let speakTimeoutId = null;
+        let isSpeechManuallyStopped = false;
+        let speechBlockedUntil = 0;
+        const API_BASE = window.location.protocol === 'file:'
+            ? 'http://127.0.0.1:8003'
+            : window.location.origin;
+        
+        // ========== NEW: Global variables for diagrams ==========
+        let threeScene, threeCamera, threeRenderer, threeModel;
+        let twoDChart = null;
+        let currentTopic = 'photosynthesis';
+        let aiSubjectSuggestions = [];
+        
+        // ========== AI CONFIGURATION ==========
+        let selectedModel = localStorage.getItem('selectedModel') || 'openai';
+        let selectedModelName = localStorage.getItem('selectedModelName') || '';
+        
+        // ========== LANGUAGE CODES ==========
+        const LANG_CODES = {
+            'en': { code: 'en-US', name: 'English', voice: 'en-US', native: 'English' },
+            'hi': { code: 'hi-IN', name: 'हिंदी', voice: 'hi-IN', native: 'हिंदी' },
+            'ta': { code: 'ta-IN', name: 'தமிழ்', voice: 'ta-IN', native: 'தமிழ்' },
+            'te': { code: 'te-IN', name: 'తెలుగు', voice: 'te-IN', native: 'తెలుగు' },
+            'mr': { code: 'mr-IN', name: 'मराठी', voice: 'mr-IN', native: 'मराठी' },
+            'bn': { code: 'bn-IN', name: 'বাংলা', voice: 'bn-IN', native: 'বাংলা' }
+        };
+
+        window.addEventListener('load', () => {
+            const modelSelect = document.getElementById('aiModelSelect');
+            const modelNameInput = document.getElementById('aiModelNameInput');
+            if (modelSelect) modelSelect.value = selectedModel;
+            if (modelNameInput) modelNameInput.value = selectedModelName;
+            updateAIModelDisplay();
+            checkApiStatus();
+        });
+        
+        // ========== NEW: VIDEO DATABASE ==========
+        const VIDEOS = {
+            'photosynthesis': [
+                { title: 'Photosynthesis - The Magic of Plants', channel: 'National Geographic', views: '2.5M', id: '1', duration: '5:23' },
+                { title: 'How Plants Make Food', channel: 'Khan Academy', views: '1.8M', id: '2', duration: '7:15' },
+                { title: 'Photosynthesis Animation', channel: 'Bozeman Science', views: '1.2M', id: '3', duration: '4:52' },
+                { title: 'Light Reaction & Calvin Cycle', channel: 'Amoeba Sisters', views: '1.5M', id: '4', duration: '6:30' }
+            ],
+            'quantum': [
+                { title: 'Quantum Physics for Beginners', channel: 'Veritasium', views: '4.2M', id: '5', duration: '8:12' },
+                { title: 'What is Quantum Mechanics?', channel: 'PBS Space Time', views: '2.1M', id: '6', duration: '9:45' },
+                { title: 'Quantum Entanglement Explained', channel: 'MinutePhysics', views: '1.7M', id: '7', duration: '3:50' },
+                { title: 'Schrödinger\'s Cat', channel: 'TED-Ed', views: '1.4M', id: '8', duration: '5:18' }
+            ],
+            'heart': [
+                { title: 'Human Heart Anatomy', channel: 'Armando Hasudungan', views: '3.1M', id: '9', duration: '6:42' },
+                { title: 'How Your Heart Works', channel: 'Mayo Clinic', views: '2.8M', id: '10', duration: '4:38' },
+                { title: 'Cardiovascular System', channel: 'Crash Course', views: '2.2M', id: '11', duration: '10:15' },
+                { title: 'Heart Animation 3D', channel: 'AnatomyZone', views: '1.5M', id: '12', duration: '5:50' }
+            ],
+            'dna': [
+                { title: 'DNA Structure & Replication', channel: 'Amoeba Sisters', views: '3.4M', id: '13', duration: '7:22' },
+                { title: 'What is DNA?', channel: 'Stated Clearly', views: '2.1M', id: '14', duration: '5:45' },
+                { title: 'DNA Double Helix', channel: 'HHMI BioInteractive', views: '1.6M', id: '15', duration: '4:18' },
+                { title: 'Genetics 101', channel: 'National Geographic', views: '1.3M', id: '16', duration: '6:05' }
+            ],
+            'newton': [
+                { title: 'Newton\'s Laws of Motion', channel: 'Professor Dave', views: '2.7M', id: '17', duration: '6:33' },
+                { title: 'Newton\'s First Law', channel: 'Veritasium', views: '1.9M', id: '18', duration: '4:52' },
+                { title: 'Newton\'s Second Law', channel: 'Flipping Physics', views: '1.2M', id: '19', duration: '5:28' },
+                { title: 'Newton\'s Third Law', channel: 'SciShow', views: '1.1M', id: '20', duration: '4:15' }
+            ],
+            'python': [
+                { title: 'Python for Beginners', channel: 'Programming with Mosh', views: '5.2M', id: '21', duration: '12:30' },
+                { title: 'Python in 10 Minutes', channel: 'Tech With Tim', views: '3.1M', id: '22', duration: '10:45' },
+                { title: 'Python Tutorial', channel: 'freeCodeCamp', views: '2.8M', id: '23', duration: '15:20' },
+                { title: 'Learn Python', channel: 'CS Dojo', views: '1.9M', id: '24', duration: '8:50' }
+            ]
+        };
+        
+        // ========== NEW: AI NOTES DATABASE ==========
+        const AI_NOTES = {
+            'photosynthesis': [
+                '• Process: Light energy → Chemical energy',
+                '• Equation: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂',
+                '• Location: Chloroplasts (chlorophyll)',
+                '• Stages: Light reaction & Calvin cycle',
+                '• Products: Glucose & Oxygen',
+                '• Importance: Base of food chain, produces oxygen'
+            ],
+            'quantum': [
+                '• Superposition: Particle exists in multiple states',
+                '• Entanglement: Instant connection across distance',
+                '• Wave-particle duality: Light is both wave and particle',
+                '• Uncertainty Principle: Can\'t know position & momentum',
+                '• Applications: Transistors, lasers, MRI, quantum computing'
+            ],
+            'heart': [
+                '• 4 chambers: Right/Left Atria, Right/Left Ventricles',
+                '• 4 valves: Tricuspid, Pulmonary, Mitral, Aortic',
+                '• Blood flow: Body → RA → RV → Lungs → LA → LV → Body',
+                '• Pacemaker: SA node generates electrical impulses',
+                '• Beats: 100,000 times per day',
+                '• Vessels: 60,000 miles of blood vessels'
+            ],
+            'dna': [
+                '• Structure: Double helix (twisted ladder)',
+                '• Backbone: Sugar-phosphate',
+                '• Base pairs: A-T (2 bonds), G-C (3 bonds)',
+                '• Human DNA: 3 billion base pairs, 20,000 genes',
+                '• 99.9% identical between all humans',
+                '• Fun fact: 60% same as bananas, 98% same as chimps'
+            ],
+            'newton': [
+                '• 1st Law: Object at rest stays at rest, moving stays moving',
+                '• 2nd Law: F = ma (Force = mass × acceleration)',
+                '• 3rd Law: Action = Reaction (equal & opposite)',
+                '• Examples: Car crashes (inertia), rockets (action-reaction)',
+                '• Applications: Engineering, space travel, sports'
+            ],
+            'python': [
+                '• Simple, clean syntax with indentation',
+                '• Interpreted language - no compilation needed',
+                '• Dynamic typing: variables change type easily',
+                '• Large standard library - batteries included',
+                '• Frameworks: Django (web), Flask (micro), Pandas (data)',
+                '• Used by Google, NASA, Netflix, Instagram'
+            ]
+        };
+        
+        // ========== NEW: VIDEO EXPLANATIONS ==========
+        const VIDEO_EXPLANATIONS = {
+            'photosynthesis': 'Photosynthesis is the process plants use to convert sunlight into energy. These videos cover the light reactions, Calvin cycle, and how plants produce oxygen. Recommended for middle school to college level.',
+            'quantum': 'Quantum physics reveals the strange behavior of particles at atomic scales. These videos explain superposition, entanglement, and real-world applications in simple terms.',
+            'heart': 'The human heart is a powerful pump that circulates blood. These videos cover anatomy, blood flow, and common heart conditions with clear 3D animations.',
+            'dna': 'DNA carries the genetic blueprint of life. These videos explain the double helix structure, replication, and how genes determine traits.',
+            'newton': 'Newton\'s Laws of Motion form the foundation of physics. These videos demonstrate each law with real-world examples and experiments.',
+            'python': 'Python is the most popular programming language for beginners. These videos teach syntax, variables, loops, and functions step by step.'
+        };
+
+        const TOPIC_VIDEO_SEARCH_QUERIES = {
+            'photosynthesis': 'photosynthesis class 10 explained',
+            'quantum': 'quantum physics basics for beginners',
+            'heart': 'human heart anatomy and blood circulation explained',
+            'dna': 'DNA structure and replication explained',
+            'newton': 'Newton laws of motion explained with examples',
+            'python': 'python programming tutorial for beginners'
+        };
+        
+        // ========== NEW: DIAGRAM EXPLANATIONS ==========
+        const DIAGRAM_EXPLANATIONS = {
+            'photosynthesis': '🌿 The 2D chart shows the efficiency of photosynthesis steps. The 3D model displays a chloroplast with thylakoids where light reactions occur.',
+            'quantum': '⚛️ The 2D graph shows quantum probability distribution. The 3D model visualizes an electron cloud around an atomic nucleus.',
+            'heart': '❤️ The 2D chart shows blood pressure in different heart chambers. The 3D model displays a simplified heart with ventricles and aorta.',
+            'dna': '🧬 The 2D chart shows base pair bond strength (A-T vs G-C). The 3D model shows the iconic double helix structure.',
+            'newton': '⚡ The 2D graph shows force vs acceleration (F=ma). The 3D model displays force vectors acting on an object.',
+            'python': '🐍 The 2D chart shows Python usage by field. The 3D model visualizes code structure as stacked blocks.'
+        };
+        
+        // ========== MULTI-LANGUAGE EXPLANATIONS ==========
+        const EXPLANATIONS = {
+            'photosynthesis': {
+                'en': `🌿 <strong>PHOTOSYNTHESIS - Complete Explanation</strong><br><br>
+                📌 <strong>What is Photosynthesis?</strong><br>
+                Photosynthesis is the process where plants convert light energy into chemical energy to produce food. They use sunlight, water, and carbon dioxide to create glucose and oxygen.<br><br>
+                📌 <strong>Chemical Equation:</strong><br>
+                6CO₂ + 6H₂O + Light → C₆H₁₂O₆ + 6O₂<br><br>
+                📌 <strong>Where?</strong> In chloroplasts (chlorophyll)<br>
+                📌 <strong>Fun Fact:</strong> 70% of Earth's oxygen comes from ocean algae!`,
+                
+                'hi': `🌿 <strong>प्रकाश संश्लेषण - पूर्ण व्याख्या</strong><br><br>
+                📌 <strong>प्रकाश संश्लेषण क्या है?</strong><br>
+                प्रकाश संश्लेषण वह प्रक्रिया है जिसमें पौधे प्रकाश ऊर्जा को रासायनिक ऊर्जा में बदलकर भोजन बनाते हैं। वे सूर्य का प्रकाश, पानी और कार्बन डाइऑक्साइड का उपयोग करके ग्लूकोज और ऑक्सीजन बनाते हैं।<br><br>
+                📌 <strong>रासायनिक समीकरण:</strong><br>
+                6CO₂ + 6H₂O + प्रकाश → C₆H₁₂O₆ + 6O₂<br><br>
+                📌 <strong>कहाँ?</strong> हरितलवक (क्लोरोफिल) में<br>
+                📌 <strong>रोचक तथ्य:</strong> पृथ्वी की 70% ऑक्सीजन समुद्री शैवाल से आती है!`,
+                
+                'ta': `🌿 <strong>ஒளிச்சேர்க்கை - முழு விளக்கம்</strong><br><br>
+                📌 <strong>ஒளிச்சேர்க்கை என்றால் என்ன?</strong><br>
+                ஒளிச்சேர்க்கை என்பது தாவரங்கள் சூரிய ஒளி ஆற்றலை இரசாயன ஆற்றலாக மாற்றி உணவை உற்பத்தி செய்யும் செயல்முறையாகும். அவை சூரிய ஒளி, நீர் மற்றும் கார்பன் டைஆக்சைடைப் பயன்படுத்தி குளுக்கோஸ் மற்றும் ஆக்ஸிஜனை உருவாக்குகின்றன.<br><br>
+                📌 <strong>வேதியியல் சமன்பாடு:</strong><br>
+                6CO₂ + 6H₂O + ஒளி → C₆H₁₂O₆ + 6O₂<br><br>
+                📌 <strong>எங்கே?</strong> பச்சையங்களில் (குளோரோபில்)<br>
+                📌 <strong>சுவாரஸ்யம்:</strong> பூமியின் 70% ஆக்ஸிஜன் கடல் பாசிகளிலிருந்து வருகிறது!`,
+                
+                'te': `🌿 <strong>కిరణజన్య సంయోగక్రియ - పూర్తి వివరణ</strong><br><br>
+                📌 <strong>కిరణజన్య సంయోగక్రియ అంటే ఏమిటి?</strong><br>
+                కిరణజన్య సంయోగక్రియ అనేది మొక్కలు కాంతి శక్తిని రసాయన శక్తిగా మార్చి ఆహారాన్ని ఉత్పత్తి చేసే ప్రక్రియ. అవి సూర్యకాంతి, నీరు మరియు కార్బన్ డయాక్సైడ్‌ను ఉపయోగించి గ్లూకోజ్ మరియు ఆక్సిజన్‌ను సృష్టిస్తాయి.<br><br>
+                📌 <strong>రసాయన సమీకరణం:</strong><br>
+                6CO₂ + 6H₂O + కాంతి → C₆H₁₂O₆ + 6O₂<br><br>
+                📌 <strong>ఎక్కడ?</strong> క్లోరోప్లాస్ట్‌లలో (క్లోరోఫిల్)<br>
+                📌 <strong>ఆసక్తికరం:</strong> భూమి యొక్క 70% ఆక్సిజన్ సముద్ర శైవలాల నుండి వస్తుంది!`,
+                
+                'mr': `🌿 <strong>प्रकाश संश्लेषण - संपूर्ण स्पष्टीकरण</strong><br><br>
+                📌 <strong>प्रकाश संश्लेषण म्हणजे काय?</strong><br>
+                प्रकाश संश्लेषण ही अशी प्रक्रिया आहे ज्यामध्ये वनस्पती प्रकाश उर्जेचे रासायनिक उर्जेत रूपांतर करून अन्न तयार करतात. त्या सूर्यप्रकाश, पाणी आणि कार्बन डायऑक्साइड वापरून ग्लुकोज आणि ऑक्सिजन तयार करतात.<br><br>
+                📌 <strong>रासायनिक समीकरण:</strong><br>
+                6CO₂ + 6H₂O + प्रकाश → C₆H₁₂O₆ + 6O₂<br><br>
+                📌 <strong>कुठे?</strong> हरितलवकांमध्ये (क्लोरोफिल)<br>
+                📌 <strong>मजेशीर तथ्य:</strong> पृथ्वीवरील 70% ऑक्सिजन समुद्री शैवालांपासून येतो!`,
+                
+                'bn': `🌿 <strong>সালোকসংশ্লেষণ - সম্পূর্ণ ব্যাখ্যা</strong><br><br>
+                📌 <strong>সালোকসংশ্লেষণ কী?</strong><br>
+                সালোকসংশ্লেষণ হল সেই প্রক্রিয়া যার মাধ্যমে উদ্ভিদ আলোক শক্তিকে রাসায়নিক শক্তিতে রূপান্তরিত করে খাদ্য তৈরি করে। তারা সূর্যের আলো, জল এবং কার্বন ডাইঅক্সাইড ব্যবহার করে গ্লুকোজ এবং অক্সিজেন তৈরি করে।<br><br>
+                📌 <strong>রাসায়নিক সমীকরণ:</strong><br>
+                6CO₂ + 6H₂O + আলো → C₆H₁₂O₆ + 6O₂<br><br>
+                📌 <strong>কোথায়?</strong> ক্লোরোপ্লাস্টে (ক্লোরোফিল)<br>
+                📌 <strong>মজার তথ্য:</strong> পৃথিবীর 70% অক্সিজেন সমুদ্রের শৈবাল থেকে আসে!`
+            },
+            
+            'quantum': {
+                'en': `⚛️ <strong>QUANTUM PHYSICS - Simple Explanation</strong><br><br>
+                📌 <strong>What is Quantum Physics?</strong><br>
+                Study of matter and energy at atomic level. Things behave strangely!<br><br>
+                📌 <strong>Key Ideas:</strong><br>
+                • Superposition: Particle in multiple states<br>
+                • Entanglement: Connected instantly<br>
+                • Wave-particle duality: Light is both!<br><br>
+                📌 <strong>Uses:</strong> Computers, Lasers, MRI`,
+                
+                'hi': `⚛️ <strong>क्वांटम फिजिक्स - सरल व्याख्या</strong><br><br>
+                📌 <strong>क्वांटम फिजिक्स क्या है?</strong><br>
+                परमाणु स्तर पर पदार्थ और ऊर्जा का अध्ययन। चीजें अजीब व्यवहार करती हैं!<br><br>
+                📌 <strong>मुख्य विचार:</strong><br>
+                • सुपरपोजिशन: कण कई अवस्थाओं में<br>
+                • एंटेंगलमेंट: तुरंत जुड़ाव<br>
+                • तरंग-कण द्वैत: प्रकाश दोनों है!<br><br>
+                📌 <strong>उपयोग:</strong> कंप्यूटर, लेजर, एमआरआई`,
+                
+                'ta': `⚛️ <strong>குவாண்டம் இயற்பியல் - எளிய விளக்கம்</strong><br><br>
+                📌 <strong>குவாண்டம் இயற்பியல் என்றால் என்ன?</strong><br>
+                அணு மட்டத்தில் பொருள் மற்றும் ஆற்றல் பற்றிய ஆய்வு. பொருட்கள் வித்தியாசமாக நடந்துகொள்கின்றன!<br><br>
+                📌 <strong>முக்கிய கருத்துக்கள்:</strong><br>
+                • சூப்பர்போசிஷன்: துகள் பல நிலைகளில்<br>
+                • என்டாங்கிள்மென்ட்: உடனடி இணைப்பு<br>
+                • அலை-துகள் இருமை: ஒளி இரண்டுமே!<br><br>
+                📌 <strong>பயன்பாடுகள்:</strong> கணினிகள், லேசர், எம்ஆர்ஐ`,
+                
+                'te': `⚛️ <strong>క్వాంటం ఫిజిక్స్ - సరళమైన వివరణ</strong><br><br>
+                📌 <strong>క్వాంటం ఫిజిక్స్ అంటే ఏమిటి?</strong><br>
+                అణు స్థాయిలో పదార్థం మరియు శక్తి యొక్క అధ్యయనం. విషయాలు వింతగా ప్రవర్తిస్తాయి!<br><br>
+                📌 <strong>ముఖ్య ఆలోచనలు:</strong><br>
+                • సూపర్‌పొజిషన్: కణం బహుళ స్థితులలో<br>
+                • ఎంటాంగిల్మెంట్: తక్షణం కనెక్ట్<br>
+                • తరంగ-కణ ద్వంద్వత్వం: కాంతి రెండూ!<br><br>
+                📌 <strong>ఉపయోగాలు:</strong> కంప్యూటర్లు, లేజర్లు, ఎంఆర్ఐ`,
+                
+                'mr': `⚛️ <strong>क्वांटम फिजिक्स - सोपे स्पष्टीकरण</strong><br><br>
+                📌 <strong>क्वांटम फिजिक्स म्हणजे काय?</strong><br>
+                अणू स्तरावर पदार्थ आणि उर्जेचा अभ्यास. गोष्टी विचित्र वागतात!<br><br>
+                📌 <strong>मुख्य कल्पना:</strong><br>
+                • सुपरपोझिशन: कण अनेक अवस्थांमध्ये<br>
+                • एन्टॅंगलमेंट: त्वरित कनेक्ट<br>
+                • तरंग-कण द्वैत: प्रकाश दोन्ही!<br><br>
+                📌 <strong>उपयोग:</strong> संगणक, लेसर, एमआरआय`,
+                
+                'bn': `⚛️ <strong>কোয়ান্টাম ফিজিক্স - সহজ ব্যাখ্যা</strong><br><br>
+                📌 <strong>কোয়ান্টাম ফিজিক্স কি?</strong><br>
+                পারমাণবিক স্তরে পদার্থ এবং শক্তির অধ্যয়ন। জিনিসগুলি অদ্ভুত আচরণ করে!<br><br>
+                📌 <strong>মূল ধারণা:</strong><br>
+                • সুপারপজিশন: কণা একাধিক অবস্থায়<br>
+                • এনট্যাঙ্গলমেন্ট: তাৎক্ষণিক সংযোগ<br>
+                • তরঙ্গ-কণা দ্বৈততা: আলো উভয়ই!<br><br>
+                📌 <strong>ব্যবহার:</strong> কম্পিউটার, লেজার, এমআরআই`
+            },
+            
+            'heart': {
+                'en': `❤️ <strong>HUMAN HEART - Simple Explanation</strong><br><br>
+                📌 <strong>4 Chambers:</strong> Right/Left Atria, Right/Left Ventricles<br>
+                📌 <strong>Pumps:</strong> 5-6 liters blood per minute<br>
+                📌 <strong>Beats:</strong> 100,000 times/day<br>
+                📌 <strong>Vessels:</strong> 60,000 miles!`,
+                
+                'hi': `❤️ <strong>मानव हृदय - सरल व्याख्या</strong><br><br>
+                📌 <strong>4 कक्ष:</strong> दायाँ/बायाँ अलिंद, दायाँ/बायाँ निलय<br>
+                📌 <strong>पंप:</strong> 5-6 लीटर रक्त प्रति मिनट<br>
+                📌 <strong>धड़कन:</strong> 100,000 बार/दिन<br>
+                📌 <strong>रक्त वाहिकाएं:</strong> 60,000 मील!`,
+                
+                'ta': `❤️ <strong>மனித இதயம் - எளிய விளக்கம்</strong><br><br>
+                📌 <strong>4 அறைகள்:</strong> வலது/இடது ஏட்ரியம், வலது/இடது வென்ட்ரிக்கிள்<br>
+                📌 <strong>உந்தி:</strong> நிமிடத்திற்கு 5-6 லிட்டர் இரத்தம்<br>
+                📌 <strong>துடிப்பு:</strong> 100,000 முறை/நாள்<br>
+                📌 <strong>குழாய்கள்:</strong> 60,000 மைல்கள்!`,
+                
+                'te': `❤️ <strong>మానవ హృదయం - సరళమైన వివరణ</strong><br><br>
+                📌 <strong>4 గదులు:</strong> కుడి/ఎడమ కర్ణికలు, కుడి/ఎడమ జఠరికలు<br>
+                📌 <strong>పంపు:</strong> నిమిషానికి 5-6 లీటర్ల రక్తం<br>
+                📌 <strong>కొట్టుకోవడం:</strong> రోజుకు 100,000 సార్లు<br>
+                📌 <strong>నాళాలు:</strong> 60,000 మైళ్ళు!`,
+                
+                'mr': `❤️ <strong>मानवी हृदय - सोपे स्पष्टीकरण</strong><br><br>
+                📌 <strong>4 कक्ष:</strong> उजवे/डावे अलिंद, उजवे/डावे निलय<br>
+                📌 <strong>पंप:</strong> प्रति मिनिट 5-6 लिटर रक्त<br>
+                📌 <strong>ठोके:</strong> दररोज 100,000 वेळा<br>
+                📌 <strong>वाहिन्या:</strong> 60,000 मैल!`,
+                
+                'bn': `❤️ <strong>মানুষের হৃদয় - সহজ ব্যাখ্যা</strong><br><br>
+                📌 <strong>4 প্রকোষ্ঠ:</strong> ডান/বাম অলিন্দ, ডান/বাম নিলয়<br>
+                📌 <strong>পাম্প:</strong> প্রতি মিনিটে 5-6 লিটার রক্ত<br>
+                📌 <strong>স্পন্দন:</strong> দিনে 100,000 বার<br>
+                📌 <strong>রক্তনালী:</strong> 60,000 মাইল!`
+            },
+            
+            'dna': {
+                'en': `🧬 <strong>DNA - Simple Explanation</strong><br><br>
+                📌 <strong>Double Helix:</strong> Twisted ladder structure<br>
+                📌 <strong>Base Pairs:</strong> A-T, G-C<br>
+                📌 <strong>Human DNA:</strong> 3 billion base pairs<br>
+                📌 <strong>Fun Fact:</strong> 60% same as bananas!`,
+                
+                'hi': `🧬 <strong>डीएनए - सरल व्याख्या</strong><br><br>
+                📌 <strong>डबल हेलिक्स:</strong> मुड़ी हुई सीढ़ी संरचना<br>
+                📌 <strong>बेस पेयर:</strong> A-T, G-C<br>
+                📌 <strong>मानव डीएनए:</strong> 3 अरब बेस पेयर<br>
+                📌 <strong>रोचक तथ्य:</strong> केले से 60% समान!`,
+                
+                'ta': `🧬 <strong>டிஎன்ஏ - எளிய விளக்கம்</strong><br><br>
+                📌 <strong>இரட்டைச் சுருள்:</strong> முறுக்கப்பட்ட ஏணி அமைப்பு<br>
+                📌 <strong>அடிப்படை இணைகள்:</strong> A-T, G-C<br>
+                📌 <strong>மனித டிஎன்ஏ:</strong> 3 பில்லியன் அடிப்படை இணைகள்<br>
+                📌 <strong>சுவாரஸ்யம்:</strong> வாழைப்பழத்துடன் 60% ஒற்றுமை!`,
+                
+                'te': `🧬 <strong>డీఎన్ఏ - సరళమైన వివరణ</strong><br><br>
+                📌 <strong>డబుల్ హెలిక్స్:</strong> మెలితిరిగిన నిచ్చెన నిర్మాణం<br>
+                📌 <strong>బేస్ పెయిర్లు:</strong> A-T, G-C<br>
+                📌 <strong>మానవ డీఎన్ఏ:</strong> 3 బిలియన్ బేస్ పెయిర్లు<br>
+                📌 <strong>ఆసక్తికరం:</strong> అరటిపండుతో 60% సమానం!`,
+                
+                'mr': `🧬 <strong>डीएनए - सोपे स्पष्टीकरण</strong><br><br>
+                📌 <strong>डबल हेलिक्स:</strong> वळलेली शिडी रचना<br>
+                📌 <strong>बेस पेअर:</strong> A-T, G-C<br>
+                📌 <strong>मानवी डीएनए:</strong> 3 अब्ज बेस पेअर<br>
+                📌 <strong>मजेशीर तथ्य:</strong> केळीपेक्षा 60% समान!`,
+                
+                'bn': `🧬 <strong>ডিএনএ - সহজ ব্যাখ্যা</strong><br><br>
+                📌 <strong>ডাবল হেলিক্স:</strong> প্যাঁচানো মই গঠন<br>
+                📌 <strong>বেস পেয়ার:</strong> A-T, G-C<br>
+                📌 <strong>মানব ডিএনএ:</strong> 3 বিলিয়ন বেস পেয়ার<br>
+                📌 <strong>মজার তথ্য:</strong> কলার সাথে 60% মিল!`
+            },
+            
+            'newton': {
+                'en': `⚡ <strong>NEWTON'S LAWS - Simple Explanation</strong><br><br>
+                📌 <strong>1st Law:</strong> Objects resist change (inertia)<br>
+                📌 <strong>2nd Law:</strong> F = ma (Force = mass × acceleration)<br>
+                📌 <strong>3rd Law:</strong> Action = Reaction<br><br>
+                📌 <strong>Example:</strong> Rocket pushes down, goes up!`,
+                
+                'hi': `⚡ <strong>न्यूटन के नियम - सरल व्याख्या</strong><br><br>
+                📌 <strong>पहला नियम:</strong> वस्तुएं बदलाव का विरोध करती हैं (जड़त्व)<br>
+                📌 <strong>दूसरा नियम:</strong> F = ma (बल = द्रव्यमान × त्वरण)<br>
+                📌 <strong>तीसरा नियम:</strong> क्रिया = प्रतिक्रिया<br><br>
+                📌 <strong>उदाहरण:</strong> रॉकेट नीचे धकेलता है, ऊपर जाता है!`,
+                
+                'ta': `⚡ <strong>நியூட்டனின் விதிகள் - எளிய விளக்கம்</strong><br><br>
+                📌 <strong>1வது விதி:</strong> பொருள்கள் மாற்றத்தை எதிர்க்கின்றன (செயலற்ற தன்மை)<br>
+                📌 <strong>2வது விதி:</strong> F = ma (விசை = நிறை × முடுக்கம்)<br>
+                📌 <strong>3வது விதி:</strong> செயல் = எதிர்வினை<br><br>
+                📌 <strong>உதாரணம்:</strong> ராக்கெட் கீழே தள்ளுகிறது, மேலே செல்கிறது!`,
+                
+                'te': `⚡ <strong>న్యూటన్ నియమాలు - సరళమైన వివరణ</strong><br><br>
+                📌 <strong>1వ నియమం:</strong> వస్తువులు మార్పును నిరోధిస్తాయి (జడత్వం)<br>
+                📌 <strong>2వ నియమం:</strong> F = ma (బలం = ద్రవ్యరాశి × త్వరణం)<br>
+                📌 <strong>3వ నియమం:</strong> క్రియ = ప్రతిక్రియ<br><br>
+                📌 <strong>ఉదాహరణ:</strong> రాకెట్ కిందికి నెట్టివేస్తుంది, పైకి వెళ్ళిపోతుంది!`,
+                
+                'mr': `⚡ <strong>न्यूटनचे नियम - सोपे स्पष्टीकरण</strong><br><br>
+                📌 <strong>१ला नियम:</strong> वस्तू बदलाला विरोध करतात (जडत्व)<br>
+                📌 <strong>२रा नियम:</strong> F = ma (बल = वस्तुमान × त्वरण)<br>
+                📌 <strong>३रा नियम:</strong> क्रिया = प्रतिक्रिया<br><br>
+                📌 <strong>उदाहरण:</strong> रॉकेट खाली ढकलते, वर जाते!`,
+                
+                'bn': `⚡ <strong>নিউটনের সূত্র - সহজ ব্যাখ্যা</strong><br><br>
+                📌 <strong>১ম সূত্র:</strong> বস্তু পরিবর্তন প্রতিরোধ করে (জড়তা)<br>
+                📌 <strong>২য় সূত্র:</strong> F = ma (বল = ভর × ত্বরণ)<br>
+                📌 <strong>৩য় সূত্র:</strong> ক্রিয়া = প্রতিক্রিয়া<br><br>
+                📌 <strong>উদাহরণ:</strong> রকেট নিচে ঠেলে দেয়, উপরে যায়!`
+            },
+            
+            'python': {
+                'en': `🐍 <strong>PYTHON - Simple Basics</strong><br><br>
+                📌 <strong>Print:</strong> print("Hello World!")<br>
+                📌 <strong>Variable:</strong> name = "Student"<br>
+                📌 <strong>If:</strong> if age >= 18: print("Adult")<br>
+                📌 <strong>Loop:</strong> for i in range(5): print(i)<br><br>
+                📌 <strong>Used by:</strong> Google, NASA, Netflix!`,
+                
+                'hi': `🐍 <strong>पायथन - सरल बेसिक्स</strong><br><br>
+                📌 <strong>प्रिंट:</strong> print("Hello World!")<br>
+                📌 <strong>वेरिएबल:</strong> name = "Student"<br>
+                📌 <strong>इफ:</strong> if age >= 18: print("Adult")<br>
+                📌 <strong>लूप:</strong> for i in range(5): print(i)<br><br>
+                📌 <strong>उपयोगकर्ता:</strong> Google, NASA, Netflix!`,
+                
+                'ta': `🐍 <strong>பைதான் - எளிய அடிப்படைகள்</strong><br><br>
+                📌 <strong>அச்சிடு:</strong> print("Hello World!")<br>
+                📌 <strong>மாறி:</strong> name = "Student"<br>
+                📌 <strong>நிபந்தனை:</strong> if age >= 18: print("Adult")<br>
+                📌 <strong>சுழற்சி:</strong> for i in range(5): print(i)<br><br>
+                📌 <strong>பயனர்கள்:</strong> Google, NASA, Netflix!`,
+                
+                'te': `🐍 <strong>పైథాన్ - సరళమైన బేసిక్స్</strong><br><br>
+                📌 <strong>ప్రింట్:</strong> print("Hello World!")<br>
+                📌 <strong>వేరియబుల్:</strong> name = "Student"<br>
+                📌 <strong>ఇఫ్:</strong> if age >= 18: print("Adult")<br>
+                📌 <strong>లూప్:</strong> for i in range(5): print(i)<br><br>
+                📌 <strong>వాడేవారు:</strong> Google, NASA, Netflix!`,
+                
+                'mr': `🐍 <strong>पायथन - सोपे बेसिक्स</strong><br><br>
+                📌 <strong>प्रिंट:</strong> print("Hello World!")<br>
+                📌 <strong>व्हेरिएबल:</strong> name = "Student"<br>
+                📌 <strong>इफ:</strong> if age >= 18: print("Adult")<br>
+                📌 <strong>लूप:</strong> for i in range(5): print(i)<br><br>
+                📌 <strong>वापरकर्ते:</strong> Google, NASA, Netflix!`,
+                
+                'bn': `🐍 <strong>পাইথন - সহজ বেসিক্স</strong><br><br>
+                📌 <strong>প্রিন্ট:</strong> print("Hello World!")<br>
+                📌 <strong>ভেরিয়েবল:</strong> name = "Student"<br>
+                📌 <strong>ইফ:</strong> if age >= 18: print("Adult")<br>
+                📌 <strong>লুপ:</strong> for i in range(5): print(i)<br><br>
+                📌 <strong>ব্যবহারকারী:</strong> Google, NASA, Netflix!`
+            }
+        };
+        
+        // ========== ALL CLASSES ==========
+        const ALL_CLASSES = [
+            { value: '1st', label: '1st Standard', type: 'school' },
+            { value: '2nd', label: '2nd Standard', type: 'school' },
+            { value: '3rd', label: '3rd Standard', type: 'school' },
+            { value: '4th', label: '4th Standard', type: 'school' },
+            { value: '5th', label: '5th Standard', type: 'school' },
+            { value: '6th', label: '6th Standard', type: 'school' },
+            { value: '7th', label: '7th Standard', type: 'school' },
+            { value: '8th', label: '8th Standard', type: 'school' },
+            { value: '9th', label: '9th Standard', type: 'school' },
+            { value: '10th', label: '10th Standard', type: 'school' },
+            { value: '11th', label: '11th Standard', type: 'school' },
+            { value: '12th', label: '12th Standard', type: 'school' },
+            { value: 'btech-1', label: 'B.Tech 1st Year', type: 'ug' },
+            { value: 'btech-2', label: 'B.Tech 2nd Year', type: 'ug' },
+            { value: 'btech-3', label: 'B.Tech 3rd Year', type: 'ug' },
+            { value: 'btech-4', label: 'B.Tech 4th Year', type: 'ug' },
+            { value: 'msc-1', label: 'M.Sc 1st Year', type: 'pg' },
+            { value: 'msc-2', label: 'M.Sc 2nd Year', type: 'pg' }
+        ];
+        
+        // ========== ALL LANGUAGES ==========
+        const ALL_LANGUAGES = [
+            { value: 'english', label: 'English', code: '🇺🇸' },
+            { value: 'hindi', label: 'हिंदी', code: '🇮🇳' },
+            { value: 'tamil', label: 'தமிழ்', code: '🇮🇳' },
+            { value: 'telugu', label: 'తెలుగు', code: '🇮🇳' },
+            { value: 'marathi', label: 'मराठी', code: '🇮🇳' },
+            { value: 'bengali', label: 'বাংলা', code: '🇮🇳' }
+        ];
+        
+        // ========== SUBJECT CATEGORIES ==========
+        const SUBJECT_CATEGORIES = {
+            'Mathematics': ['Algebra', 'Calculus', 'Geometry', 'Trigonometry', 'Statistics', 'Probability'],
+            'Physics': ['Mechanics', 'Electricity', 'Optics', 'Quantum Physics', 'Thermodynamics'],
+            'Chemistry': ['Organic', 'Inorganic', 'Physical', 'Biochemistry'],
+            'Biology': ['Botany', 'Zoology', 'Genetics', 'Microbiology', 'Anatomy'],
+            'Computer Science': ['Programming', 'Data Structures', 'Algorithms', 'AI', 'Web Development']
+        };
+        
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeClasses();
+            initializeLanguages();
+            initializeSubjects();
+            initializeVoiceControls();
+            detectBrowser();
+            loadVoiceHistory();
+            updateAIModelDisplay();
+            checkApiStatus();
+            setResponseLanguage('en');
+            setVoiceInputLanguage('en');
+            updateDashboardStats();
+            
+            // ========== NEW: Initialize 3D and 2D ==========
+            setTimeout(() => {
+                init3D();
+                init2D();
+                loadVideos('photosynthesis');
+                updateNotes('photosynthesis');
+            }, 500);
+        });
+        
+        // ========== BROWSER DETECTION ==========
+        function detectBrowser() {
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const browserSpecific = document.getElementById('browserSpecific');
+            
+            if (isSafari) {
+                browserSpecific.innerHTML = '🍏 Safari: Click → Type your question (Continuous mode not supported)';
+                browserSpecific.style.background = '#fff3e0';
+                browserSpecific.style.color = '#b45309';
+            } else {
+                browserSpecific.innerHTML = '🎤 Chrome/Edge: Continuous Voice - Click once, speak multiple times!';
+                browserSpecific.style.background = '#e0f2fe';
+                browserSpecific.style.color = '#0369a1';
+            }
+        }
+        
+        // ========== TAB MANAGEMENT ==========
+        function switchTab(tabName, sourceElement = null) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            const clickedTab = sourceElement && sourceElement.classList && sourceElement.classList.contains('tab')
+                ? sourceElement
+                : (window.event && window.event.target && window.event.target.closest('.tab'))
+                    ? window.event.target.closest('.tab')
+                    : document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
+            if (clickedTab) clickedTab.classList.add('active');
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            const picker = document.getElementById('tabPicker');
+            if (picker) picker.value = tabName;
+        }
+
+        function goToTab(tabName) {
+            switchTab(tabName);
+        }
+
+        function askFromGlobal() {
+            const input = document.getElementById('globalAskInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            document.getElementById('messageInput').value = text;
+            switchTab('voice');
+            sendMessage();
+            input.value = '';
+        }
+
+        function toggleFocusMode() {
+            isFocusMode = !isFocusMode;
+            document.body.classList.toggle('focus-mode', isFocusMode);
+            const btn = document.getElementById('focusModeBtn');
+            if (btn) {
+                btn.innerHTML = isFocusMode ? '🧘 Exit Focus' : '🧘 Focus Mode';
+            }
+        }
+
+        function updateDashboardStats() {
+            const studentCount = document.getElementById('dashStudent');
+            const studentNameLabel = document.getElementById('dashStudentName');
+            const subjectCount = document.getElementById('dashSubjects');
+            const voiceCount = document.getElementById('dashVoice');
+            const modelLabel = document.getElementById('dashModel');
+
+            if (studentCount) studentCount.textContent = studentName ? '1' : '0';
+            if (studentNameLabel) studentNameLabel.textContent = studentName || 'Not registered';
+            if (subjectCount) subjectCount.textContent = String(selectedSubjects.size || 0);
+            if (voiceCount) voiceCount.textContent = String(voiceHistory.length || 0);
+            if (modelLabel) modelLabel.textContent = selectedModel || 'openai';
+        }
+        
+        // ========== RESPONSE LANGUAGE ==========
+        function setResponseLanguage(lang) {
+            responseLanguage = lang;
+            
+            document.querySelectorAll('.response-lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`respLang${lang.charAt(0).toUpperCase() + lang.slice(1)}`).classList.add('active');
+            
+            document.getElementById('currentResponseLanguage').innerHTML = `<span>🔵</span> Current Response Language: ${LANG_CODES[lang].name} - I will reply in ${LANG_CODES[lang].name}`;
+            document.getElementById('responseLangDisplay').innerHTML = `🌐 Response: ${LANG_CODES[lang].name}`;
+            
+            showMessage(`🌐 Response language changed to ${LANG_CODES[lang].name} - I will now reply in ${LANG_CODES[lang].name}`, 'ai');
+        }
+        
+        // ========== VOICE INPUT LANGUAGE ==========
+        function setVoiceInputLanguage(lang) {
+            voiceInputLanguage = lang;
+            
+            document.querySelectorAll('.voice-lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`voiceLang${lang.charAt(0).toUpperCase() + lang.slice(1)}Btn`).classList.add('active');
+            
+            const status = document.getElementById('voiceStatus');
+            if (status) {
+                const statusIcon = document.getElementById('statusIcon');
+                const statusText = document.getElementById('statusText');
+                statusIcon.innerHTML = '🎤';
+                statusText.innerHTML = `Voice input: ${LANG_CODES[lang].name} | Response: ${LANG_CODES[responseLanguage].name}`;
+            }
+        }
+        
+        // ========== CONTINUOUS VOICE ==========
+        function toggleContinuousVoice() {
+            const btn = document.getElementById('voiceMainButton');
+            const status = document.getElementById('voiceStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            
+            if (isSafari) {
+                safariVoiceFallback();
+                return;
+            }
+            
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                alert('Speech recognition not supported in this browser. Please use Chrome, Edge, or Firefox.');
+                return;
+            }
+            
+            if (!isContinuousMode) {
+                startContinuousVoice();
+            } else {
+                stopContinuousVoice();
+            }
+        }
+
+        function isStopCommand(text) {
+            const normalized = String(text || '').trim().toLowerCase();
+            return normalized === 'stop' ||
+                normalized === 'stop voice' ||
+                normalized === 'stop speaking' ||
+                normalized === 'stop listening' ||
+                normalized === 'stop command';
+        }
+        
+        function startContinuousVoice() {
+            const btn = document.getElementById('voiceMainButton');
+            const status = document.getElementById('voiceStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = LANG_CODES[voiceInputLanguage].code;
+            recognition.maxAlternatives = 1;
+            
+            isContinuousMode = true;
+            isListening = true;
+            
+            btn.innerHTML = '⏹️ STOP CONTINUOUS VOICE';
+            btn.classList.add('listening');
+            btn.style.background = 'linear-gradient(90deg, #dc2626, #ef4444)';
+            
+            statusIcon.innerHTML = '🔴';
+            statusText.innerHTML = `CONTINUOUS MODE ACTIVE - Speak any time, I'm always listening!`;
+            status.style.borderLeftColor = '#ef4444';
+            status.style.background = '#fee2e2';
+            
+            recognition.onstart = function() {
+                console.log('Continuous voice started');
+            };
+            
+            recognition.onresult = function(event) {
+                const lastResult = event.results[event.results.length - 1];
+                const transcript = lastResult[0].transcript;
+                const isFinal = lastResult.isFinal;
+                
+                if (isFinal && transcript.trim() !== '') {
+                    if (isStopCommand(transcript)) {
+                        stopAllVoice();
+                        showMessage('⏹️ Stopped voice listening and speaking.', 'ai');
+                        return;
+                    }
+
+                    statusIcon.innerHTML = '✅';
+                    statusText.innerHTML = `You said: "${transcript}"`;
+                    status.style.borderLeftColor = '#10b981';
+                    status.style.background = '#f0fdf4';
+                    
+                    showMessage(`🎤 ${transcript}`, 'user');
+                    document.getElementById('messageInput').value = transcript;
+                    addVoiceHistory(transcript, voiceInputLanguage);
+                    
+                    sendMessage();
+                    
+                    setTimeout(() => {
+                        if (isContinuousMode) {
+                            statusIcon.innerHTML = '🔴';
+                            statusText.innerHTML = `CONTINUOUS MODE ACTIVE - Speak any time, I'm always listening!`;
+                            status.style.borderLeftColor = '#ef4444';
+                            status.style.background = '#fee2e2';
+                        }
+                    }, 2000);
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                
+                if (event.error === 'not-allowed') {
+                    statusIcon.innerHTML = '❌';
+                    statusText.innerHTML = 'Microphone access denied. Please allow microphone access.';
+                    status.style.borderLeftColor = '#ef4444';
+                    stopContinuousVoice();
+                } else if (event.error === 'no-speech') {
+                    if (isContinuousMode) {
+                        recognition.start();
+                    }
+                }
+            };
+            
+            recognition.onend = function() {
+                console.log('Continuous voice ended');
+                
+                if (isContinuousMode) {
+                    console.log('Restarting continuous voice...');
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.error('Restart failed', e);
+                        setTimeout(() => {
+                            if (isContinuousMode) {
+                                recognition.start();
+                            }
+                        }, 500);
+                    }
+                }
+            };
+            
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Failed to start recognition', e);
+            }
+        }
+        
+        function stopContinuousVoice() {
+            const btn = document.getElementById('voiceMainButton');
+            const status = document.getElementById('voiceStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            
+            isContinuousMode = false;
+            isListening = false;
+            
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.error('Failed to stop recognition', e);
+                }
+            }
+            
+            btn.innerHTML = '🎤 START CONTINUOUS VOICE';
+            btn.classList.remove('listening');
+            btn.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+            
+            statusIcon.innerHTML = '⚡';
+            statusText.innerHTML = 'Continuous mode stopped. Click START to speak multiple times.';
+            status.style.borderLeftColor = '#4f46e5';
+            status.style.background = '#f0f9ff';
+        }
+        
+        function safariVoiceFallback() {
+            const question = prompt("🎤 Type your question:", "Explain photosynthesis");
+            
+            if (question && question.trim() !== "") {
+                const text = question.trim();
+                
+                showMessage(`🎤 ${text}`, 'user');
+                document.getElementById('messageInput').value = text;
+                addVoiceHistory(text, voiceInputLanguage);
+                
+                setTimeout(() => {
+                    sendMessage();
+                }, 500);
+            }
+        }
+        
+        // ========== FIXED VOICE OUTPUT - COMPLETE SENTENCES ==========
+        function speakLastResponse() {
+            const messages = document.querySelectorAll('.ai-message');
+            const speechStatus = document.getElementById('speechStatus');
+            
+            if (messages.length > 0 && 'speechSynthesis' in window) {
+                if (Date.now() < speechBlockedUntil) return;
+                isSpeechManuallyStopped = false;
+                const lastMsg = messages[messages.length - 1];
+                let text = lastMsg.dataset.speechText || lastAiResponseForSpeech || '';
+
+                if (!text) {
+                    text = (lastMsg.textContent || '')
+                        .replace(/^.*AI Teacher.*$/im, ' ')
+                        .replace(/ALL FEATURES/gi, ' ')
+                        .replace(/[•●▪️◦]/g, ' ')
+                        .replace(/[\u{1F300}-\u{1FAFF}]/gu, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+                
+                if (text && text.length > 10) {
+                    window.speechSynthesis.cancel();
+                    
+                    if (speakTimeoutId) clearTimeout(speakTimeoutId);
+                    speakTimeoutId = setTimeout(() => {
+                        try {
+                            if (isSpeechManuallyStopped || Date.now() < speechBlockedUntil) return;
+                            const utterance = new SpeechSynthesisUtterance(text);
+                            
+                            utterance.lang = LANG_CODES[responseLanguage].voice;
+                            utterance.rate = parseFloat(document.getElementById('voiceSpeed')?.value || '1.0');
+                            utterance.pitch = parseFloat(document.getElementById('voicePitch')?.value || '1.0');
+                            utterance.volume = 1.0;
+                            utterance.text = text;
+                            
+                            utterance.onstart = function() {
+                                if (isSpeechManuallyStopped || Date.now() < speechBlockedUntil) {
+                                    window.speechSynthesis.cancel();
+                                    return;
+                                }
+                                if (speechStatus) {
+                                    speechStatus.innerHTML = '🔊 Speaking... (playing complete sentence)';
+                                    speechStatus.style.color = '#3b82f6';
+                                }
+                                
+                                const status = document.getElementById('voiceStatus');
+                                if (status) {
+                                    status.innerHTML = `🔊 Speaking in ${LANG_CODES[responseLanguage].name}... (full response)`;
+                                    status.style.borderLeftColor = '#3b82f6';
+                                    status.style.background = '#eff6ff';
+                                }
+                            };
+                            
+                            utterance.onend = function() {
+                                if (speechStatus) {
+                                    speechStatus.innerHTML = '✅ Complete sentence spoken!';
+                                    speechStatus.style.color = '#10b981';
+                                }
+                                
+                                const status = document.getElementById('voiceStatus');
+                                if (status && isContinuousMode) {
+                                    status.innerHTML = `🔴 CONTINUOUS MODE ACTIVE - Speak any time!`;
+                                    status.style.borderLeftColor = '#ef4444';
+                                    status.style.background = '#fee2e2';
+                                }
+                                
+                                setTimeout(() => {
+                                    if (speechStatus) {
+                                        speechStatus.innerHTML = '✅ Voice output ready - Will speak COMPLETE sentences';
+                                        speechStatus.style.color = '#6b7280';
+                                    }
+                                }, 3000);
+                            };
+                            
+                            utterance.onerror = function(event) {
+                                if (speechStatus) {
+                                    speechStatus.innerHTML = '❌ Speech error - trying again...';
+                                    speechStatus.style.color = '#ef4444';
+                                }
+                                
+                                setTimeout(() => {
+                                    if (isSpeechManuallyStopped || Date.now() < speechBlockedUntil) return;
+                                    try {
+                                        window.speechSynthesis.speak(utterance);
+                                    } catch (e) {
+                                        console.error('Retry failed:', e);
+                                    }
+                                }, 500);
+                            };
+                            
+                            window.speechSynthesis.speak(utterance);
+                            
+                            if (window.speechSynthesis.paused) {
+                                window.speechSynthesis.resume();
+                            }
+                            
+                        } catch (e) {
+                            console.error('Speech synthesis error:', e);
+                            if (speechStatus) {
+                                speechStatus.innerHTML = '❌ Failed to speak. Please try again.';
+                                speechStatus.style.color = '#ef4444';
+                            }
+                        }
+                    }, 100);
+                    
+                } else {
+                    if (speechStatus) {
+                        speechStatus.innerHTML = '❌ No valid text to speak';
+                        speechStatus.style.color = '#ef4444';
+                        
+                        setTimeout(() => {
+                            speechStatus.innerHTML = '✅ Voice output ready - Will speak COMPLETE sentences';
+                            speechStatus.style.color = '#6b7280';
+                        }, 2000);
+                    }
+                }
+            }
+        }
+        
+        function stopSpeaking() {
+            if ('speechSynthesis' in window) {
+                isSpeechManuallyStopped = true;
+                speechBlockedUntil = Date.now() + 1500;
+                if (speakTimeoutId) {
+                    clearTimeout(speakTimeoutId);
+                    speakTimeoutId = null;
+                }
+                window.speechSynthesis.cancel();
+                
+                const speechStatus = document.getElementById('speechStatus');
+                if (speechStatus) {
+                    speechStatus.innerHTML = '⏹️ Speaking stopped';
+                    speechStatus.style.color = '#6b7280';
+                    
+                    setTimeout(() => {
+                        speechStatus.innerHTML = '✅ Voice output ready - Will speak COMPLETE sentences';
+                        speechStatus.style.color = '#6b7280';
+                    }, 2000);
+                }
+                
+                const status = document.getElementById('voiceStatus');
+                if (status) {
+                    status.innerHTML = `⚡ Speaking stopped`;
+                    status.style.borderLeftColor = '#6b7280';
+                    status.style.background = '#f3f4f6';
+                    
+                    setTimeout(() => {
+                        if (isContinuousMode) {
+                            status.innerHTML = `🔴 CONTINUOUS MODE ACTIVE - Speak any time!`;
+                            status.style.borderLeftColor = '#ef4444';
+                            status.style.background = '#fee2e2';
+                        } else {
+                            status.innerHTML = `⚡ Click START to speak multiple times.`;
+                            status.style.borderLeftColor = '#4f46e5';
+                            status.style.background = '#f0f9ff';
+                        }
+                    }, 2000);
+                }
+            }
+        }
+
+        function stopAllVoice() {
+            if (isContinuousMode || isListening) {
+                stopContinuousVoice();
+            }
+            stopSpeaking();
+        }
+        
+        // ========== VOICE CONTROLS INIT ==========
+        function initializeVoiceControls() {
+            const voiceSpeed = document.getElementById('voiceSpeed');
+            const speedValue = document.getElementById('speedValue');
+            if (voiceSpeed && speedValue) {
+                voiceSpeed.addEventListener('input', () => {
+                    speedValue.textContent = `${voiceSpeed.value}x`;
+                });
+            }
+            
+            const voicePitch = document.getElementById('voicePitch');
+            const pitchValue = document.getElementById('pitchValue');
+            if (voicePitch && pitchValue) {
+                voicePitch.addEventListener('input', () => {
+                    pitchValue.textContent = voicePitch.value;
+                });
+            }
+        }
+        
+        // ========== VOICE HISTORY ==========
+        function addVoiceHistory(text, lang) {
+            voiceHistory.unshift({
+                text: text,
+                lang: LANG_CODES[lang || voiceInputLanguage].name,
+                responseLang: LANG_CODES[responseLanguage].name,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+            });
+            if (voiceHistory.length > 10) voiceHistory = voiceHistory.slice(0, 10);
+            localStorage.setItem('voiceHistory', JSON.stringify(voiceHistory));
+            updateVoiceHistoryDisplay();
+            updateDashboardStats();
+        }
+        
+        function loadVoiceHistory() {
+            const saved = localStorage.getItem('voiceHistory');
+            if (saved) {
+                voiceHistory = JSON.parse(saved);
+                updateVoiceHistoryDisplay();
+                updateDashboardStats();
+            }
+        }
+        
+        function updateVoiceHistoryDisplay() {
+            const container = document.getElementById('voiceHistory');
+            if (!container) return;
+            
+            if (voiceHistory.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 15px;">No voice commands yet</div>';
+                return;
+            }
+            
+            container.innerHTML = voiceHistory.map(item => `
+                <div class="voice-history-item">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 11px; color: #6b7280;">👤 You • ${item.lang} • Reply: ${item.responseLang} • ${item.time}</span>
+                        <span onclick="quickQuestion('${item.text.replace(/'/g, "\\'")}')" style="font-size: 11px; color: #4f46e5; cursor: pointer;">↻ Ask again</span>
+                    </div>
+                    <div style="font-size: 13px; margin-top: 5px;">${item.text}</div>
+                </div>
+            `).join('');
+        }
+        
+        function clearVoiceHistory() {
+            voiceHistory = [];
+            localStorage.removeItem('voiceHistory');
+            updateVoiceHistoryDisplay();
+            updateDashboardStats();
+            showMessage('🗑️ Voice history cleared', 'ai');
+        }
+        
+        // ========== CHAT FUNCTIONS ==========
+        async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    if (isStopCommand(message)) {
+        showMessage(message, 'user');
+        input.value = '';
+        stopAllVoice();
+        showMessage('⏹️ Stopped voice listening and speaking.', 'ai');
+        return;
+    }
+
+    if (!studentId) {
+        showMessage('⚠️ Please complete registration first.', 'ai');
+        switchTab('registration');
+        return;
+    }
+
+    showMessage(message, 'user');
+    input.value = '';
+
+    showMessage("Thinking...", "ai");
+
+    try {
+        const response = await fetch(`${API_BASE}/chat`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                language: studentLanguage || "english",
+                student_id: studentId || "student001",
+                subject: "general",
+                model_provider: selectedModel || undefined,
+                model_name: selectedModelName || undefined
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data?.detail || `Request failed with status ${response.status}`);
+        }
+
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox.lastChild) {
+            chatBox.removeChild(chatBox.lastChild);
+        }
+
+        showMessage(data.reply, "ai");
+        if (data.explanation && data.explanation.toLowerCase().includes("offline mode")) {
+            showMessage(`⚠️ ${data.explanation}`, "ai");
+        }
+        if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+            const topSuggestions = data.suggestions.slice(0, 2).join(" | ");
+            showMessage(`💡 ${topSuggestions}`, "ai");
+        }
+
+    } catch (error) {
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox.lastChild) {
+            chatBox.removeChild(chatBox.lastChild);
+        }
+        showMessage(`Backend error: ${error.message || "Make sure server is running."}`, "ai");
+        console.error(error);
+    }
+}
+
+        
+        function getExplanation(topic) {
+            if (EXPLANATIONS[topic] && EXPLANATIONS[topic][responseLanguage]) {
+                return EXPLANATIONS[topic][responseLanguage] + `<br><br>📺 Check Videos tab • 🎮 See 2D/3D diagrams • 📝 View study notes`;
+            }
+            return EXPLANATIONS[topic]['en'] + `<br><br><span style="color: #6b7280; font-size: 12px;">🌐 Showing in English. ${LANG_CODES[responseLanguage].name} translation coming soon!</span><br><br>📺 Check Videos tab • 🎮 See 2D/3D diagrams • 📝 View study notes`;
+        }
+        
+        function quickQuestion(question) {
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+        
+        function showMessage(text, type) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            const header = type === 'user' 
+                ? `<div class="message-header">👤 ${studentName || 'You'}</div>`
+                : `<div class="message-header">🤖 AI Teacher • ${LANG_CODES[responseLanguage].name}</div>`;
+            
+            messageDiv.innerHTML = header + text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (type === 'ai') {
+                const speechSource = String(text || '')
+                    .replace(/<br\s*\/?>/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&nbsp;/gi, ' ')
+                    .replace(/&amp;/gi, '&')
+                    .replace(/&lt;/gi, '<')
+                    .replace(/&gt;/gi, '>');
+
+                lastAiResponseForSpeech = speechSource
+                    .replace(/ALL FEATURES/gi, '')
+                    .replace(/[•●▪️◦]/g, ' ')
+                    .replace(/[\u{1F300}-\u{1FAFF}]/gu, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                messageDiv.dataset.speechText = lastAiResponseForSpeech;
+            }
+        }
+        
+        // ========== CLASS MANAGEMENT ==========
+        function initializeClasses() {
+            const classGrid = document.getElementById('classGrid');
+            classGrid.innerHTML = '';
+            
+            ALL_CLASSES.forEach(cls => {
+                const div = document.createElement('div');
+                div.className = 'class-option';
+                div.textContent = cls.label;
+                div.dataset.value = cls.value;
+                div.dataset.type = cls.type;
+                div.onclick = function(e) { 
+                    selectClass(cls.value, e); 
+                };
+                classGrid.appendChild(div);
+            });
+        }
+        
+        function filterClasses(type) {
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.class-option').forEach(option => {
+                option.style.display = (type === 'all' || option.dataset.type === type) ? 'block' : 'none';
+            });
+        }
+        
+        function selectClass(value, e) {
+            document.querySelectorAll('.class-option').forEach(el => el.classList.remove('selected'));
+            e.target.classList.add('selected');
+            studentClass = value;
+            fetchClassSubjectSuggestions(value);
+        }
+        
+        // ========== LANGUAGE MANAGEMENT ==========
+        function initializeLanguages() {
+            const languageGrid = document.getElementById('languageGrid');
+            languageGrid.innerHTML = '';
+            
+            ALL_LANGUAGES.forEach(lang => {
+                const div = document.createElement('div');
+                div.className = 'language-option';
+                div.innerHTML = `${lang.code} ${lang.label}`;
+                div.dataset.value = lang.value;
+                div.onclick = function(e) {
+                    document.querySelectorAll('.language-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    studentLanguage = lang.value;
+                    if (studentClass) {
+                        fetchClassSubjectSuggestions(studentClass);
+                    }
+                };
+                languageGrid.appendChild(div);
+            });
+            document.querySelector('.language-option').classList.add('selected');
+        }
+        
+        // ========== SUBJECT MANAGEMENT ==========
+        function initializeSubjects() {
+            const subjectCategories = document.getElementById('subjectCategories');
+            subjectCategories.innerHTML = '';
+            
+            for (const [category, subjects] of Object.entries(SUBJECT_CATEGORIES)) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category-panel';
+                categoryDiv.innerHTML = `
+                    <div class="category-header" onclick="toggleCategory('${category.replace(/\s+/g, '-')}')">
+                        <span>${category} (${subjects.length})</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="category-content" id="${category.replace(/\s+/g, '-')}-content">
+                        <div class="subject-grid">
+                            ${subjects.map(subject => `
+                                <div class="subject-checkbox">
+                                    <input type="checkbox" id="subject-${subject.toLowerCase().replace(/\s+/g, '-')}" 
+                                           value="${subject}" onchange="updateSelectedSubjects(this)">
+                                    <label for="subject-${subject.toLowerCase().replace(/\s+/g, '-')}">${subject}</label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                subjectCategories.appendChild(categoryDiv);
+            }
+            
+            setTimeout(() => toggleCategory('Mathematics'), 100);
+        }
+        
+        function toggleCategory(category) {
+            const content = document.getElementById(`${category}-content`);
+            const isExpanded = content.classList.contains('expanded');
+            
+            document.querySelectorAll('.category-content').forEach(cat => cat.classList.remove('expanded'));
+            document.querySelectorAll('.category-header span:last-child').forEach(arrow => arrow.textContent = '▼');
+            
+            if (!isExpanded) {
+                content.classList.add('expanded');
+                content.previousElementSibling.querySelector('span:last-child').textContent = '▲';
+            }
+        }
+        
+        function selectAllSubjects() {
+            document.querySelectorAll('.subject-checkbox input').forEach(cb => {
+                cb.checked = true;
+                selectedSubjects.add(cb.value);
+            });
+            updateDashboardStats();
+        }
+        
+        function deselectAllSubjects() {
+            document.querySelectorAll('.subject-checkbox input').forEach(cb => {
+                cb.checked = false;
+                selectedSubjects.delete(cb.value);
+            });
+            updateDashboardStats();
+        }
+        
+        function updateSelectedSubjects(checkbox) {
+            if (checkbox.checked) {
+                selectedSubjects.add(checkbox.value);
+            } else {
+                selectedSubjects.delete(checkbox.value);
+            }
+            updateDashboardStats();
+        }
+
+        async function fetchClassSubjectSuggestions(classGrade) {
+            const container = document.getElementById('aiSubjectSuggestions');
+            if (!container || !classGrade) return;
+
+            container.innerHTML = `🔎 Finding best subjects for <strong>${classGrade}</strong>...`;
+
+            try {
+                const lang = studentLanguage || "english";
+                const response = await fetch(`${API_BASE}/subject-suggestions/${encodeURIComponent(classGrade)}?language=${encodeURIComponent(lang)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data?.detail || `Request failed with status ${response.status}`);
+                }
+
+                aiSubjectSuggestions = Array.isArray(data.recommended_subjects) ? data.recommended_subjects : [];
+                renderClassSubjectSuggestions(classGrade, aiSubjectSuggestions, data.learning_tip || "");
+            } catch (error) {
+                container.innerHTML = `<span style="color:#b91c1c;">Could not load class-based subject suggestions.</span>`;
+                console.error(error);
+            }
+        }
+
+        function renderClassSubjectSuggestions(classGrade, suggestions, learningTip) {
+            const container = document.getElementById('aiSubjectSuggestions');
+            if (!container) return;
+
+            if (!Array.isArray(suggestions) || suggestions.length === 0) {
+                container.innerHTML = `No suggestions available for ${classGrade}.`;
+                return;
+            }
+
+            let html = `
+                <div style="margin-bottom: 10px; color:#0f172a;">
+                    <strong>Class ${classGrade} - Recommended Subjects</strong>
+                </div>
+            `;
+
+            suggestions.forEach((item) => {
+                const subject = item.subject || "Subject";
+                const reason = item.reason || "Recommended for your class level.";
+                const priority = item.priority || "-";
+                html += `
+                    <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <div><strong>${subject}</strong> <span style="font-size:12px; color:#475569;">(Priority ${priority})</span></div>
+                            <div style="display:flex; gap:6px;">
+                                <button onclick="addSuggestedSubject('${subject.replace(/'/g, "\\'")}')" style="margin:0; width:auto; padding:8px 10px; font-size:12px; background:#10b981;">➕ Select</button>
+                                <button onclick="learnSuggestedSubject('${subject.replace(/'/g, "\\'")}')" style="margin:0; width:auto; padding:8px 10px; font-size:12px; background:#2563eb;">📘 Learn</button>
+                            </div>
+                        </div>
+                        <div style="margin-top:6px; font-size:13px; color:#334155;">${reason}</div>
+                    </div>
+                `;
+            });
+
+            if (learningTip) {
+                html += `<div style="margin-top:8px; font-size:13px; color:#334155;"><strong>Tip:</strong> ${learningTip}</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function addSuggestedSubject(subject) {
+            const normalized = String(subject || "").toLowerCase();
+            const checkboxes = Array.from(document.querySelectorAll('.subject-checkbox input'));
+            const match = checkboxes.find(cb => String(cb.value || "").toLowerCase() === normalized);
+
+            if (match) {
+                if (!match.checked) {
+                    match.checked = true;
+                    updateSelectedSubjects(match);
+                }
+            } else {
+                selectedSubjects.add(subject);
+                updateDashboardStats();
+            }
+
+            showMessage(`✅ Added subject: ${subject}`, 'ai');
+            switchTab('subjects');
+        }
+
+        function learnSuggestedSubject(subject) {
+            const prompt = `Teach me ${subject} for ${studentClass || 'my class'} in easy steps with examples and practice questions.`;
+            switchTab('voice');
+            quickQuestion(prompt);
+        }
+        
+        // ========== REGISTRATION ==========
+        function registerStudent() {
+            const name = document.getElementById('studentName').value.trim();
+            const school = document.getElementById('schoolName').value.trim();
+            const mobile = document.getElementById('mobileNumber').value;
+            const email = document.getElementById('studentEmail').value;
+            
+            if (!name || !school || !studentClass || !mobile) {
+                showMessage('❌ Please fill all required fields!', 'ai');
+                return;
+            }
+            
+            if (mobile.length !== 10) {
+                showMessage('❌ Mobile number must be 10 digits', 'ai');
+                return;
+            }
+            
+            studentName = name;
+            studentId = 'STU' + Math.floor(Math.random() * 10000);
+            
+            document.getElementById('studentInfoDisplay').innerHTML = `👤 ${name} • ID: ${studentId}`;
+            updateDashboardStats();
+            const topSubjects = aiSubjectSuggestions.slice(0, 3).map(s => s.subject).join(', ');
+            showMessage(`✅ Registration Successful!<br>Name: ${name}<br>School: ${school}<br>Student ID: ${studentId}<br>Class: ${studentClass}${topSubjects ? `<br>AI Suggested: ${topSubjects}` : ''}`, 'ai');
+        }
+        
+        // ========== AI MODEL FUNCTIONS ==========
+        function changeAIModel() {
+            selectedModel = document.getElementById('aiModelSelect').value;
+            localStorage.setItem('selectedModel', selectedModel);
+            updateAIModelDisplay();
+            updateDashboardStats();
+            showMessage(`🤖 AI model changed to ${selectedModel}`, 'ai');
+        }
+        
+        function saveModelName() {
+            selectedModelName = document.getElementById('aiModelNameInput').value.trim();
+            localStorage.setItem('selectedModelName', selectedModelName);
+            updateAIModelDisplay();
+            showMessage('✅ Model name saved!', 'ai');
+        }
+        
+        function updateAIModelDisplay() {
+            const modelNames = {
+                openai: 'OpenAI',
+                gemini: 'Gemini',
+                deepseek: 'DeepSeek'
+            };
+            const displayName = modelNames[selectedModel] || 'OpenAI';
+            const suffix = selectedModelName ? ` • ${selectedModelName}` : '';
+            document.getElementById('aiModelDisplay').innerHTML = `🤖 ${displayName}${suffix}`;
+        }
+        
+        function checkApiStatus() {
+            const badge = document.getElementById('apiStatusBadge');
+            badge.innerHTML = 'ℹ️ Server uses `.env` API keys';
+            badge.style.background = '#e0f2fe';
+            badge.style.color = '#075985';
+        }
+        
+        // ========== TOOL FUNCTIONS ==========
+        function openNotepad() { showMessage('📝 Opening Notepad...', 'ai'); }
+        function openCalculator() { showMessage('🧮 Opening Calculator...', 'ai'); }
+        function openDictionary() { showMessage('📖 Opening Dictionary...', 'ai'); }
+        function openConverter() { showMessage('🔄 Opening Converter...', 'ai'); }
+        function openTimer() { showMessage('⏱️ Opening Timer...', 'ai'); }
+        function openPlanner() { showMessage('📅 Opening Planner...', 'ai'); }
+        function openFlashcards() { showMessage('🃏 Opening Flashcards...', 'ai'); }
+        function openMindMap() { showMessage('🗺️ Opening Mind Map...', 'ai'); }
+        
+        function open3DViewer(type) {
+            const types = {
+                'math': 'Math Shapes',
+                'anatomy': 'Human Anatomy',
+                'chemistry': 'Molecules',
+                'physics': 'Physics Models',
+                'astronomy': 'Solar System',
+                'biology': 'Cell Structure'
+            };
+            showMessage(`🎮 Opening 3D ${types[type] || type}...`, 'ai');
+        }
+        
+        function exportData() { showMessage('📤 Exporting data...', 'ai'); }
+        function showHelp() { showMessage('❓ Opening help guide...', 'ai'); }
+        
+        function clearChat() {
+            if (confirm('Clear all chat messages?')) {
+                document.getElementById('chatBox').innerHTML = `
+                    <div class="message ai-message">
+                        <div class="message-header">
+                            🤖 <strong>AI Teacher</strong>
+                            <span style="background: #4f46e5; color: white; padding: 4px 10px; border-radius: 30px; font-size: 10px;">ALL FEATURES</span>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <strong>✨ COMPLETE PLATFORM - 8 SCROLLING TABS!</strong><br><br>
+                            🎤 Voice • 📺 Videos • 🎮 2D/3D • 📝 Notes<br>
+                            📝 Register • 📚 Subjects • ⚡ Tools • 🔑 AI<br><br>
+                            Scroll horizontally to access all features!
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // ========== NEW: VIDEO FUNCTIONS ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function formatViews(views) {
+            const n = Number(views || 0);
+            if (!n || n < 1) return '';
+            if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M views`;
+            if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K views`;
+            return `${n} views`;
+        }
+
+        async function loadVideos(topic) {
+            currentTopic = topic;
+            
+            // Update active topic button
+            document.querySelectorAll('#videos-tab .topic-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (window.event && window.event.target) window.event.target.classList.add('active');
+            
+            const container = document.getElementById('videoContainer');
+            if (!container) return;
+
+            const query = TOPIC_VIDEO_SEARCH_QUERIES[topic] || `${topic} tutorial for students`;
+            const searchInput = document.getElementById('videoSearchInput');
+            if (searchInput) searchInput.value = query;
+            await fetchAndRenderVideos(query, topic);
+        }
+
+        async function fetchAndRenderVideos(query, topic) {
+            const container = document.getElementById('videoContainer');
+            const explanation = document.getElementById('videoExplanation');
+            if (!container || !explanation) return;
+
+            container.innerHTML = `<div style="padding: 14px; color: #475569;">🔎 Searching best YouTube videos for: <strong>${escapeHtml(query)}</strong>...</div>`;
+
+            try {
+                const response = await fetch(`${API_BASE}/video-recommendations?query=${encodeURIComponent(query)}&limit=6`);
+                const data = await response.json();
+                const liveVideos = Array.isArray(data.videos) ? data.videos : [];
+
+                if (response.ok && liveVideos.length > 0) {
+                    let html = '<div class="video-grid">';
+                    liveVideos.forEach(video => {
+                        const safeTitle = escapeHtml(video.title);
+                        const safeChannel = escapeHtml(video.channel || 'YouTube Channel');
+                        const safeDuration = escapeHtml(video.duration || 'N/A');
+                        const safeViews = formatViews(video.views);
+                        const safeThumb = escapeHtml(video.thumbnail || '');
+                        const safeUrl = escapeHtml(video.url || '#');
+
+                        html += `
+                            <a class="video-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+                                <div class="video-thumbnail" style="${safeThumb ? `background-image:url('${safeThumb}'); background-size:cover; background-position:center;` : ''}">
+                                    ${safeThumb ? '' : '<i class="fab fa-youtube" style="font-size: 40px; color: #ff0000;"></i>'}
+                                    <div class="play-button"><i class="fas fa-play"></i></div>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-name">${safeTitle}</div>
+                                    <div class="video-channel">
+                                        <i class="fas fa-user-circle"></i> ${safeChannel}
+                                        <span style="margin-left: auto;">${safeDuration}</span>
+                                    </div>
+                                    ${safeViews ? `<div style="font-size:12px; color:#64748b; margin-top:6px;">${safeViews}</div>` : ''}
+                                </div>
+                            </a>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+
+                    explanation.innerHTML = `
+                        <p style="margin-bottom: 8px;"><strong>📌 ${escapeHtml(topic.charAt(0).toUpperCase() + topic.slice(1))} - Best YouTube Recommendations</strong></p>
+                        <p>${escapeHtml(VIDEO_EXPLANATIONS[topic] || 'Best educational videos selected from search relevance, educational intent, and quality signals.')}</p>
+                        <p style="margin-top: 10px; color: #ff0000;"><i class="fab fa-youtube"></i> ${liveVideos.length} live recommendations • Click any card to open on YouTube</p>
+                    `;
+                    return;
+                }
+
+                // Fallback to local curated list
+                const fallbackList = VIDEOS[topic] || VIDEOS.photosynthesis;
+                let fallbackHtml = '<div class="video-grid">';
+                fallbackList.forEach(video => {
+                    const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`;
+                    fallbackHtml += `
+                        <a class="video-card" href="${watchUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+                            <div class="video-thumbnail">
+                                <i class="fab fa-youtube" style="font-size: 40px; color: #ff0000;"></i>
+                                <div class="play-button"><i class="fas fa-play"></i></div>
+                            </div>
+                            <div class="video-info">
+                                <div class="video-name">${escapeHtml(video.title)}</div>
+                                <div class="video-channel">
+                                    <i class="fas fa-user-circle"></i> ${escapeHtml(video.channel)}
+                                    <span style="margin-left: auto;">${escapeHtml(video.duration)}</span>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                });
+                fallbackHtml += '</div>';
+                container.innerHTML = fallbackHtml;
+
+                const searchUrl = data.youtube_search_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+                explanation.innerHTML = `
+                    <p style="margin-bottom: 8px;"><strong>📌 ${escapeHtml(topic.charAt(0).toUpperCase() + topic.slice(1))} - Fallback Recommendations</strong></p>
+                    <p>Live recommendation API is temporarily unavailable. Showing curated videos.</p>
+                    <p style="margin-top: 10px;"><a href="${escapeHtml(searchUrl)}" target="_blank" rel="noopener noreferrer">Open full YouTube search results</a></p>
+                `;
+            } catch (error) {
+                container.innerHTML = `<div style="padding: 14px; color: #b91c1c;">Video recommendation error. Please try again.</div>`;
+                explanation.innerHTML = `<p style="color:#b91c1c;">Could not fetch live recommendations for "${escapeHtml(query)}".</p>`;
+            }
+        }
+
+        async function searchVideos() {
+            const input = document.getElementById('videoSearchInput');
+            const query = input ? input.value.trim() : '';
+            if (!query) return;
+            await fetchAndRenderVideos(query, currentTopic || 'general');
+        }
+        
+        function playVideo(videoId, title, topic) {
+            alert(`🎬 Now playing: ${title}\n\nThis would open YouTube video ID: ${videoId}\n\nIn a full implementation, this would play the actual video.`);
+            
+            document.getElementById('videoExplanation').innerHTML = `
+                <h5 style="color: #ff0000; margin-bottom: 10px;">
+                    <i class="fab fa-youtube"></i> Now Playing: ${title}
+                </h5>
+                <p><strong>AI Analysis:</strong> This educational video covers key concepts in ${topic}. It includes visual animations and expert explanations suitable for students.</p>
+                <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-top: 12px;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i> Key topics covered:<br>
+                    • Core concepts of ${topic}<br>
+                    • Visual demonstrations<br>
+                    • Real-world applications<br>
+                    • Practice questions included
+                </div>
+            `;
+        }
+        
+        // ========== NEW: 2D DIAGRAM FUNCTIONS ==========
+        function init2D() {
+            const container = document.getElementById('diagram2d-container');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            const canvas = document.createElement('canvas');
+            canvas.id = 'topicChart';
+            canvas.width = container.clientWidth || 400;
+            canvas.height = 200;
+            container.appendChild(canvas);
+
+            render2DChart(
+                {
+                    type: 'line',
+                    labels: ['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5'],
+                    datasets: [{
+                        label: 'Photosynthesis Process',
+                        data: [100, 80, 90, 70, 95]
+                    }]
+                },
+                'Photosynthesis: Light Energy → Chemical Energy'
+            );
+        }
+
+        function render2DChart(chartSpec, labelText) {
+            const canvas = document.getElementById('topicChart');
+            if (!canvas || !chartSpec) return;
+
+            const ctx = canvas.getContext('2d');
+            if (twoDChart) twoDChart.destroy();
+
+            const dataset = (chartSpec.datasets && chartSpec.datasets[0]) || { label: 'Process', data: [] };
+            const chartType = chartSpec.type || 'line';
+
+            twoDChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: chartSpec.labels || [],
+                    datasets: [{
+                        label: dataset.label || 'Process',
+                        data: dataset.data || [],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: '#4f46e5',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#4f46e5' }
+                    }
+                }
+            });
+
+            if (labelText) {
+                document.getElementById('diagram2d-label').innerHTML = labelText;
+            }
+        }
+        
+        function update2DDiagram(topic) {
+            let data, label, labels, chartType;
+            
+            switch(topic) {
+                case 'photosynthesis':
+                    data = [100, 80, 90, 70, 95];
+                    label = 'Photosynthesis Efficiency';
+                    labels = ['Light', 'CO₂', 'Water', 'Glucose', 'Oxygen'];
+                    chartType = 'line';
+                    document.getElementById('diagram2d-label').innerHTML = 'Photosynthesis: Light Energy → Chemical Energy';
+                    break;
+                case 'quantum':
+                    data = [95, 85, 75, 65, 55];
+                    label = 'Quantum Probability';
+                    labels = ['Superposition', 'Entanglement', 'Tunneling', 'Spin', 'Decoherence'];
+                    chartType = 'line';
+                    document.getElementById('diagram2d-label').innerHTML = 'Quantum States & Probability';
+                    break;
+                case 'heart':
+                    data = [90, 85, 80, 75, 70];
+                    label = 'Blood Pressure (mmHg)';
+                    labels = ['Right Atrium', 'Right Vent', 'Left Atrium', 'Left Vent', 'Aorta'];
+                    chartType = 'line';
+                    document.getElementById('diagram2d-label').innerHTML = 'Heart Chamber Pressure';
+                    break;
+                case 'dna':
+                    data = [98, 95, 92, 88, 85];
+                    label = 'Bond Strength';
+                    labels = ['A-T', 'G-C', 'Sugar', 'Phosphate', 'Helix'];
+                    chartType = 'bar';
+                    document.getElementById('diagram2d-label').innerHTML = 'DNA Base Pair Bond Strength';
+                    break;
+                case 'newton':
+                    data = [100, 90, 80, 70, 60];
+                    label = 'Force vs Acceleration';
+                    labels = ['1N', '2N', '3N', '4N', '5N'];
+                    chartType = 'line';
+                    document.getElementById('diagram2d-label').innerHTML = 'Newton\'s Second Law: F = ma';
+                    break;
+                case 'python':
+                    data = [95, 85, 75, 80, 90];
+                    label = 'Usage %';
+                    labels = ['Web', 'Data', 'AI', 'Automation', 'Education'];
+                    chartType = 'bar';
+                    document.getElementById('diagram2d-label').innerHTML = 'Python Usage by Field';
+                    break;
+                default:
+                    data = [100, 80, 90, 70, 95];
+                    label = 'Process';
+                    labels = ['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5'];
+                    chartType = 'line';
+            }
+
+            render2DChart(
+                {
+                    type: chartType,
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data
+                    }]
+                },
+                null
+            );
+        }
+        
+        // ========== NEW: 3D DIAGRAM FUNCTIONS ==========
+        function init3D() {
+            const container = document.getElementById('diagram3d-container');
+            if (!container) return;
+            
+            threeScene = new THREE.Scene();
+            threeScene.background = new THREE.Color(0x1a1c2c);
+            
+            threeCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            threeCamera.position.set(2, 1.5, 3);
+            threeCamera.lookAt(0, 0, 0);
+            
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer.setSize(container.clientWidth, container.clientHeight);
+            threeRenderer.shadowMap.enabled = true;
+            container.appendChild(threeRenderer.domElement);
+            
+            const ambientLight = new THREE.AmbientLight(0x404060);
+            threeScene.add(ambientLight);
+            
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+            mainLight.position.set(1, 2, 2);
+            mainLight.castShadow = true;
+            threeScene.add(mainLight);
+            
+            const gridHelper = new THREE.GridHelper(5, 20, 0x4f46e5, 0x6b7280);
+            threeScene.add(gridHelper);
+            
+            create3DModel('photosynthesis');
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                if (threeModel) {
+                    threeModel.rotation.y += 0.005;
+                    threeModel.rotation.x += 0.002;
+                }
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+            
+            window.addEventListener('resize', () => {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                threeRenderer.setSize(width, height);
+                threeCamera.aspect = width / height;
+                threeCamera.updateProjectionMatrix();
+            });
+        }
+        
+        function create3DModel(topic) {
+            if (threeModel) threeScene.remove(threeModel);
+            
+            switch(topic) {
+                case 'photosynthesis':
+                    const chloroplast = new THREE.Group();
+                    
+                    const membrane = new THREE.Mesh(
+                        new THREE.SphereGeometry(1, 32, 32),
+                        new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.3 })
+                    );
+                    chloroplast.add(membrane);
+                    
+                    const nucleus = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.5, 32, 32),
+                        new THREE.MeshPhongMaterial({ color: 0x4f46e5, emissive: 0x1e1b4b })
+                    );
+                    chloroplast.add(nucleus);
+                    
+                    for (let i = 0; i < 6; i++) {
+                        const thylakoid = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.15, 16, 16),
+                            new THREE.MeshPhongMaterial({ color: 0x10b981, emissive: 0x064e3b })
+                        );
+                        thylakoid.position.set(
+                            Math.sin(i * 1.0) * 0.8,
+                            Math.cos(i * 1.0) * 0.6,
+                            Math.sin(i * 0.8) * 0.7
+                        );
+                        chloroplast.add(thylakoid);
+                    }
+                    
+                    threeModel = chloroplast;
+                    threeScene.add(threeModel);
+                    document.getElementById('diagram3d-label').innerHTML = '3D Chloroplast Structure';
+                    break;
+                    
+                case 'quantum':
+                    const quantumGroup = new THREE.Group();
+                    
+                    const nucleusQ = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.3, 32, 32),
+                        new THREE.MeshPhongMaterial({ color: 0xff6b6b, emissive: 0x7f1d1d })
+                    );
+                    quantumGroup.add(nucleusQ);
+                    
+                    for (let i = 0; i < 40; i++) {
+                        const electron = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.04, 8, 8),
+                            new THREE.MeshPhongMaterial({ color: 0x4ecdc4, emissive: 0x1e3a3a })
+                        );
+                        electron.position.set(
+                            (Math.random() - 0.5) * 2,
+                            (Math.random() - 0.5) * 2,
+                            (Math.random() - 0.5) * 2
+                        );
+                        quantumGroup.add(electron);
+                    }
+                    
+                    threeModel = quantumGroup;
+                    threeScene.add(threeModel);
+                    document.getElementById('diagram3d-label').innerHTML = '3D Electron Cloud Model';
+                    break;
+                    
+                case 'heart':
+                    const heartGroup = new THREE.Group();
+                    
+                    const leftV = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.6, 32, 32),
+                        new THREE.MeshPhongMaterial({ color: 0xff4757, emissive: 0x7f1d1d })
+                    );
+                    leftV.position.x = -0.3;
+                    heartGroup.add(leftV);
+                    
+                    const rightV = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.5, 32, 32),
+                        new THREE.MeshPhongMaterial({ color: 0xff6b81, emissive: 0x7f1d1d })
+                    );
+                    rightV.position.x = 0.4;
+                    heartGroup.add(rightV);
+                    
+                    const aorta = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.1, 0.1, 0.8),
+                        new THREE.MeshPhongMaterial({ color: 0xffa502 })
+                    );
+                    aorta.position.y = 0.5;
+                    aorta.rotation.z = 0.3;
+                    heartGroup.add(aorta);
+                    
+                    threeModel = heartGroup;
+                    threeScene.add(threeModel);
+                    document.getElementById('diagram3d-label').innerHTML = '3D Heart Model';
+                    break;
+                    
+                case 'dna':
+                    const dnaGroup = new THREE.Group();
+                    
+                    for (let i = 0; i < 12; i++) {
+                        const base1 = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.1, 0.1, 0.3),
+                            new THREE.MeshPhongMaterial({ color: 0x4f46e5 })
+                        );
+                        base1.position.set(-0.4, i * 0.3 - 1.8, 0);
+                        dnaGroup.add(base1);
+                        
+                        const base2 = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.1, 0.1, 0.3),
+                            new THREE.MeshPhongMaterial({ color: 0x10b981 })
+                        );
+                        base2.position.set(0.4, i * 0.3 - 1.8, 0);
+                        dnaGroup.add(base2);
+                        
+                        const rung = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.8, 0.05, 0.05),
+                            new THREE.MeshPhongMaterial({ color: 0xffffff })
+                        );
+                        rung.position.set(0, i * 0.3 - 1.8, 0);
+                        dnaGroup.add(rung);
+                    }
+                    
+                    threeModel = dnaGroup;
+                    threeScene.add(threeModel);
+                    document.getElementById('diagram3d-label').innerHTML = '3D DNA Double Helix';
+                    break;
+                    
+                case 'newton':
+                    const forceGroup = new THREE.Group();
+                    
+                    const box = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.6, 0.6, 0.6),
+                        new THREE.MeshPhongMaterial({ color: 0xffa502, emissive: 0x7f6500 })
+                    );
+                    forceGroup.add(box);
+                    
+                    for (let i = 0; i < 3; i++) {
+                        const arrow = new THREE.Mesh(
+                            new THREE.ConeGeometry(0.1, 0.3, 8),
+                            new THREE.MeshPhongMaterial({ color: 0xff4757 })
+                        );
+                        arrow.position.x = 0.5 + i * 0.3;
+                        arrow.rotation.z = -Math.PI / 2;
+                        forceGroup.add(arrow);
+                    }
+                    
+                    threeModel = forceGroup;
+                    threeScene.add(threeModel);
+                    document.getElementById('diagram3d-label').innerHTML = '3D Force Vectors';
+                    break;
+                    
+                case 'python':
+                    const codeGroup = new THREE.Group();
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const line = new THREE.Mesh(
+                            new THREE.BoxGeometry(1.2, 0.1, 0.1),
+                            new THREE.MeshPhongMaterial({ color: 0x4f46e5 })
+                        );
+                        line.position.y = 0.5 - i * 0.2;
+                        codeGroup.add(line);
+                    }
+                    
+                    threeModel = codeGroup;
+                    threeScene.add(threeModel);
+                    document.getElementById('diagram3d-label').innerHTML = '3D Code Visualization';
+                    break;
+                    
+                default:
+                    create3DModel('photosynthesis');
+            }
+        }
+        
+        function update3DDiagram(topic) {
+            create3DModel(topic);
+        }
+
+        async function fetchDiagramSpec(topic) {
+            try {
+                const response = await fetch(`${API_BASE}/diagram-spec?topic=${encodeURIComponent(topic)}`);
+                if (!response.ok) return null;
+                const data = await response.json();
+                if (!data || !data.chart) return null;
+                return data;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function applyDiagramSpec(spec) {
+            const labelText = spec.title ? `${spec.title}: ${spec.explanation || ''}` : null;
+            render2DChart(spec.chart, labelText);
+            update3DDiagram(spec.model_topic || spec.topic);
+
+            document.getElementById('diagramExplanation').innerHTML = `
+                <p style="margin-bottom: 10px;"><strong>📌 ${escapeHtml(spec.title || spec.topic)}</strong></p>
+                <p>${escapeHtml(spec.explanation || 'Interactive 2D and 3D visualizations for this topic.')}</p>
+                <p style="margin-top: 10px; color: #4f46e5;"><i class="fas fa-cube"></i> 3D model rotating • <i class="fas fa-chart-line"></i> 2D chart showing trends</p>
+            `;
+        }
+
+        async function updateDiagrams(topic) {
+            currentTopic = topic;
+            
+            document.querySelectorAll('#diagrams-tab .topic-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (window.event && window.event.target) window.event.target.classList.add('active');
+
+            const spec = await fetchDiagramSpec(topic);
+            if (spec) {
+                applyDiagramSpec(spec);
+            } else {
+                update2DDiagram(topic);
+                update3DDiagram(topic);
+                document.getElementById('diagramExplanation').innerHTML = `
+                    <p style="margin-bottom: 10px;"><strong>📌 ${topic.charAt(0).toUpperCase() + topic.slice(1)} - Diagram Explanation</strong></p>
+                    <p>${DIAGRAM_EXPLANATIONS[topic] || 'Interactive 2D and 3D visualizations for this topic.'}</p>
+                    <p style="margin-top: 10px; color: #4f46e5;"><i class="fas fa-cube"></i> 3D model rotating • <i class="fas fa-chart-line"></i> 2D chart showing trends</p>
+                `;
+            }
+        }
+        
+        // ========== NEW: NOTES FUNCTIONS ==========
+        function updateNotes(topic) {
+            currentTopic = topic;
+            
+            document.querySelectorAll('#notes-tab .topic-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (window.event && window.event.target) window.event.target.classList.add('active');
+            
+            const notes = AI_NOTES[topic] || AI_NOTES.photosynthesis;
+            
+            let html = `<h4 style="color: #4f46e5; margin-bottom: 15px;">📌 ${topic.charAt(0).toUpperCase() + topic.slice(1)} - Study Notes</h4>`;
+            html += '<ul style="list-style-type: none; padding-left: 0;">';
+            
+            notes.forEach(note => {
+                html += `<li style="margin-bottom: 10px;"><i class="fas fa-check-circle" style="color: #10b981;"></i> ${note.replace('•', '').trim()}</li>`;
+            });
+            
+            html += '</ul>';
+            document.getElementById('aiNotesContent').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
