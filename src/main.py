@@ -6,10 +6,16 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Any, Dict, Tuple
 import uuid
 from datetime import datetime
-import speech_recognition as sr
+try:
+    import speech_recognition as sr
+except Exception:
+    sr = None
 import tempfile
 import os
-import pyttsx3
+try:
+    import pyttsx3
+except Exception:
+    pyttsx3 = None
 import base64
 import binascii
 import hmac
@@ -31,11 +37,16 @@ try:
 except Exception:
     OpenAI = None
 
-# Optional Gemini client (google-genai)
+# Optional Gemini clients
 try:
-    from google import genai
+    from google import genai as genai_new
 except Exception:
-    genai = None
+    genai_new = None
+
+try:
+    import google.generativeai as genai_legacy  # pyright: ignore[reportMissingImports]
+except Exception:
+    genai_legacy = None
 
 from dotenv import load_dotenv
 
@@ -45,6 +56,7 @@ load_dotenv()
 # Initialize OpenAI/Gemini/DeepSeek clients (with error handling)
 client = None
 gemini_client = None
+gemini_client_type: Optional[str] = None
 deepseek_client = None
 openai_disabled_reason: Optional[str] = None
 if OpenAI is not None:
@@ -57,11 +69,22 @@ if OpenAI is not None:
 
 # Gemini client
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-if genai is not None and gemini_api_key:
-    try:
-        gemini_client = genai.Client(api_key=gemini_api_key)
-    except Exception:
-        gemini_client = None
+if gemini_api_key:
+    if genai_new is not None:
+        try:
+            gemini_client = genai_new.Client(api_key=gemini_api_key)
+            gemini_client_type = "new"
+        except Exception:
+            gemini_client = None
+            gemini_client_type = None
+    elif genai_legacy is not None:
+        try:
+            genai_legacy.configure(api_key=gemini_api_key)
+            gemini_client = genai_legacy
+            gemini_client_type = "legacy"
+        except Exception:
+            gemini_client = None
+            gemini_client_type = None
 
 # DeepSeek client (OpenAI-compatible)
 deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
@@ -70,6 +93,26 @@ if OpenAI is not None and deepseek_api_key:
         deepseek_client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
     except Exception:
         deepseek_client = None
+
+huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY")
+ollama_base_url = (os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434").rstrip("/")
+
+
+def _is_ollama_reachable() -> bool:
+    try:
+        with httpx.Client(timeout=1.0) as http:
+            response = http.get(f"{ollama_base_url}/api/tags")
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+ollama_available = _is_ollama_reachable()
+
+
+def _log_ai_error(message: str) -> None:
+    if (os.getenv("DEBUG_LOG_AI_ERRORS") or "").strip().lower() in {"1", "true", "yes", "on"}:
+        print(message)
 
 app = FastAPI(
     title="AI Teacher Assistant",
@@ -515,7 +558,14 @@ async def home():
 async def web_app():
     if not FRONTEND_DIR.exists():
         raise HTTPException(status_code=404, detail="frontend directory not found")
-    return FileResponse(FRONTEND_DIR / "index.html")
+    return FileResponse(
+        FRONTEND_DIR / "index.html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 # ========== HEALTH CHECK ==========
 @app.get("/health")
@@ -548,6 +598,9 @@ async def voice_to_text(audio_file: UploadFile = File(...), language: str = "en-
     - bn-IN: Bengali (India)
     """
     
+    if sr is None:
+        raise HTTPException(status_code=503, detail="SpeechRecognition package is not installed")
+
     temp_path = ""
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
@@ -575,19 +628,19 @@ async def voice_to_text(audio_file: UploadFile = File(...), language: str = "en-
             "message": "Speech converted successfully"
         }
         
-    except sr.UnknownValueError:
-        return {
-            "success": False,
-            "text": "",
-            "error": "Could not understand audio. Please speak clearly."
-        }
-    except sr.RequestError as e:
-        return {
-            "success": False,
-            "text": "",
-            "error": f"Speech recognition service error: {str(e)}"
-        }
     except Exception as e:
+        if sr is not None and isinstance(e, sr.UnknownValueError):
+            return {
+                "success": False,
+                "text": "",
+                "error": "Could not understand audio. Please speak clearly."
+            }
+        if sr is not None and isinstance(e, sr.RequestError):
+            return {
+                "success": False,
+                "text": "",
+                "error": f"Speech recognition service error: {str(e)}"
+            }
         return {
             "success": False,
             "text": "",
@@ -609,6 +662,9 @@ async def text_to_speech(request: TTSRequest):
     
     if not text:
         raise HTTPException(status_code=400, detail="Text is required")
+
+    if pyttsx3 is None:
+        raise HTTPException(status_code=503, detail="pyttsx3 package is not installed")
     
     temp_path = ""
     try:
@@ -813,15 +869,24 @@ def _step_by_step_prompt(language: str) -> str:
 
 
 def _provider_order(requested: Optional[str]) -> List[str]:
-    all_providers = ["openai", "gemini", "deepseek"]
+    all_providers = ["openai", "gemini", "deepseek", "huggingface", "ollama"]
     order: List[str] = []
 
+    alias_map = {
+        "hf": "huggingface",
+        "hugging_face": "huggingface",
+        "allama": "ollama",
+    }
+
+    def _normalize(name: str) -> str:
+        return alias_map.get(name, name)
+
     if requested:
-        order.append(requested)
+        order.append(_normalize(requested))
     else:
         env_default = (os.getenv("DEFAULT_MODEL_PROVIDER") or "").strip().lower()
         if env_default:
-            order.append(env_default)
+            order.append(_normalize(env_default))
 
     # Keep preferred provider first, then fall back to others.
     order.extend(all_providers)
@@ -840,6 +905,10 @@ def _provider_available(provider: str) -> bool:
         return gemini_client is not None
     if provider == "deepseek":
         return deepseek_client is not None
+    if provider == "huggingface":
+        return bool(huggingface_api_key)
+    if provider == "ollama":
+        return ollama_available
     return False
 
 
@@ -850,7 +919,108 @@ def _default_model(provider: str) -> str:
         return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     if provider == "deepseek":
         return os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+    if provider == "huggingface":
+        return os.getenv("HUGGINGFACE_MODEL", "mistralai/Mistral-7B-Instruct-v0.2")
+    if provider == "ollama":
+        return os.getenv("OLLAMA_MODEL", "llama3.2")
     return ""
+
+
+async def _invoke_provider(provider: str, model_name: str, system_prompt: str, user_message: str) -> str:
+    if provider == "openai":
+        assert client is not None
+        completion = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        return completion.choices[0].message.content or ""
+
+    if provider == "gemini":
+        prompt = f"{system_prompt}\n\nUser: {user_message}"
+        if gemini_client_type == "new":
+            assert gemini_client is not None
+            result = gemini_client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            return getattr(result, "text", None) or ""
+
+        if genai_legacy is None:
+            raise RuntimeError("Gemini legacy SDK is not available")
+        model = genai_legacy.GenerativeModel(model_name)
+        result = model.generate_content(prompt)
+        return getattr(result, "text", None) or ""
+
+    if provider == "deepseek":
+        assert deepseek_client is not None
+        completion = deepseek_client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        return completion.choices[0].message.content or ""
+
+    if provider == "huggingface":
+        if not huggingface_api_key:
+            raise RuntimeError("HUGGINGFACE_API_KEY is not configured")
+        endpoint = f"https://api-inference.huggingface.co/models/{quote(model_name, safe='/:')}"
+        headers = {
+            "Authorization": f"Bearer {huggingface_api_key}",
+            "Content-Type": "application/json",
+        }
+        prompt = f"System: {system_prompt}\n\nUser: {user_message}\n\nAssistant:"
+        payload = {
+            "inputs": prompt,
+            "parameters": {"temperature": 0.7, "max_new_tokens": 500, "return_full_text": False},
+            "options": {"wait_for_model": True}
+        }
+        async with httpx.AsyncClient(timeout=httpx.Timeout(45.0)) as http:
+            response = await http.post(endpoint, headers=headers, json=payload)
+        if response.status_code >= 400:
+            raise RuntimeError(f"Hugging Face HTTP {response.status_code}: {response.text[:200]}")
+        data = response.json()
+        if isinstance(data, list) and data:
+            first = data[0]
+            if isinstance(first, dict):
+                return (first.get("generated_text") or "").strip()
+        if isinstance(data, dict):
+            if data.get("error"):
+                raise RuntimeError(str(data.get("error")))
+            return (data.get("generated_text") or "").strip()
+        return ""
+
+    if provider == "ollama":
+        endpoint = f"{ollama_base_url}/api/chat"
+        payload = {
+            "model": model_name,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            "stream": False,
+            "options": {"temperature": 0.7}
+        }
+        async with httpx.AsyncClient(timeout=httpx.Timeout(45.0)) as http:
+            response = await http.post(endpoint, json=payload)
+        if response.status_code >= 400:
+            raise RuntimeError(f"Ollama HTTP {response.status_code}: {response.text[:200]}")
+        data = response.json()
+        if isinstance(data, dict):
+            message = data.get("message") or {}
+            if isinstance(message, dict):
+                return (message.get("content") or "").strip()
+        return ""
+
+    raise RuntimeError(f"Unknown provider: {provider}")
 
 
 async def get_free_api_response(message: str) -> Optional[str]:
@@ -1228,16 +1398,11 @@ async def chat_with_teacher(request: ChatRequest):
                 notes="auto-tracked from chat",
             )
     
-    # Choose provider
-    provider = "offline"
-    provider_candidates = _provider_order((request.model_provider or "").strip().lower())
-    for candidate in provider_candidates:
-        if _provider_available(candidate):
-            provider = candidate
-            break
+    requested_provider = (request.model_provider or "").strip().lower()
+    provider_candidates = _provider_order(requested_provider)
+    configured_providers = [p for p in provider_candidates if _provider_available(p)]
 
-    # If no provider is configured, use fallback responses
-    if provider == "offline":
+    if not configured_providers:
         free_api_reply = await get_free_api_response(request.message)
         ai_reply = free_api_reply or await get_ai_response(request.message, request.language)
         explanation = "Using offline response mode. Configure an API key for AI-powered responses."
@@ -1254,7 +1419,8 @@ async def chat_with_teacher(request: ChatRequest):
             language=request.language,
             explanation=explanation,
             suggestions=[
-                "Set up OPENAI_API_KEY, GEMINI_API_KEY, or DEEPSEEK_API_KEY in .env",
+                "Set up OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, or HUGGINGFACE_API_KEY in .env",
+                "Or run a local Ollama model and set OLLAMA_MODEL",
                 "Try voice features",
                 "Ask about math or science",
                 "Request practice papers"
@@ -1278,39 +1444,26 @@ async def chat_with_teacher(request: ChatRequest):
         if request.subject:
             system_prompt += f" Focus on {request.subject} subject."
 
-        model_name = request.model_name or _default_model(provider)
-
-        if provider == "openai":
-            completion = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": request.message}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            ai_reply = completion.choices[0].message.content
-        elif provider == "gemini":
-            prompt = f"{system_prompt}\n\nUser: {request.message}"
-            result = gemini_client.models.generate_content(
-                model=model_name,
-                contents=prompt
-            )
-            ai_reply = getattr(result, "text", None) or ""
-        elif provider == "deepseek":
-            completion = deepseek_client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": request.message}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            ai_reply = completion.choices[0].message.content
-        else:
-            ai_reply = ""
+        provider = "offline"
+        ai_reply = ""
+        provider_errors: List[str] = []
+        for candidate in configured_providers:
+            model_name = request.model_name or _default_model(candidate)
+            try:
+                ai_reply = await _invoke_provider(candidate, model_name, system_prompt, request.message)
+                if ai_reply:
+                    provider = candidate
+                    break
+                provider_errors.append(f"{candidate}: empty response")
+            except Exception as provider_error:
+                provider_error_text = str(provider_error)
+                provider_errors.append(f"{candidate}: {provider_error_text}")
+                _log_ai_error(f"{candidate} API error: {provider_error_text}")
+                if candidate == "openai":
+                    if "insufficient_quota" in provider_error_text or "429" in provider_error_text:
+                        openai_disabled_reason = "quota exceeded"
+                    elif "invalid_api_key" in provider_error_text or "401" in provider_error_text:
+                        openai_disabled_reason = "invalid API key"
 
         if not ai_reply:
             ai_reply = await get_ai_response(request.message, request.language)
@@ -1326,7 +1479,11 @@ async def chat_with_teacher(request: ChatRequest):
         return ChatResponse(
             reply=ai_reply,
             language=request.language,
-            explanation=f"AI-generated response via {provider}.",
+            explanation=(
+                f"AI-generated response via {provider}."
+                if provider != "offline"
+                else "All configured providers are unavailable right now. Using offline mode."
+            ),
             suggestions=suggestions,
             student_id=request.student_id
         )
@@ -1334,7 +1491,7 @@ async def chat_with_teacher(request: ChatRequest):
     except Exception as e:
         # Fallback to rule-based response if provider fails
         error_text = str(e)
-        print(f"{provider} API error: {error_text}")
+        _log_ai_error(f"chat fallback error: {error_text}")
         free_api_reply = await get_free_api_response(request.message)
         ai_reply = free_api_reply or await get_ai_response(request.message, request.language)
         if request.step_by_step:

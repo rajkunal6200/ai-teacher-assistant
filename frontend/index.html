@@ -205,10 +205,10 @@
             align-items: center;
             gap: 8px;
             padding: 8px 0;
-            position: sticky;
-            top: 0;
+            position: static;
+            top: auto;
             background: #f8fafc;
-            z-index: 10;
+            z-index: auto;
         }
         
         .section-title::after {
@@ -1517,25 +1517,6 @@
             font-size: 12px;
         }
 
-        body.focus-mode .sidebar,
-        body.focus-mode .features {
-            display: none;
-        }
-
-        body.focus-mode .chat-area {
-            width: 100%;
-            max-width: 100%;
-            flex: 1;
-            padding: 22px;
-        }
-
-        body.focus-mode .main-content {
-            display: block;
-        }
-
-        body.focus-mode .container {
-            max-width: 1200px;
-        }
 
         @media (max-width: 768px) {
             .dashboard-grid,
@@ -1558,13 +1539,13 @@
     <div class="container">
         <header>
             <h1>🎓 AI Teacher Assistant</h1>
-            <div class="tagline">✅ COMPLETE SENTENCE Voice Output • Continuous Voice Input • Video • 2D/3D • Notes</div>
+            <div class="tagline">✅ COMPLETE SENTENCE Voice Output • Video • 2D/3D • Notes</div>
             <div class="header-toolbar">
                 <div class="header-search">
                     <input id="globalAskInput" type="text" placeholder="Ask anything quickly... (press Enter)" onkeypress="if(event.key==='Enter') askFromGlobal()">
                     <button class="mini-action" onclick="askFromGlobal()">⚡ Ask AI</button>
                 </div>
-                <button class="mini-action secondary" onclick="goToTab('dashboard')">🧭 Dashboard</button>
+                <button id="dashboardShortcutBtn" class="mini-action secondary" onclick="goToTab('dashboard')">🧭 Dashboard</button>
             </div>
         </header>
         
@@ -1599,7 +1580,7 @@
                                     <div class="dash-card">
                                         <div class="dash-muted">Registered Student</div>
                                         <div class="dash-kpi" id="dashStudent">No</div>
-                                        <div class="dash-muted" id="dashStudentName">Complete registration tab</div>
+                                        <div class="dash-muted" id="dashStudentName">Complete onboarding to continue</div>
                                     </div>
                                     <div class="dash-card">
                                         <div class="dash-muted">Selected Subjects</div>
@@ -1622,7 +1603,6 @@
                                     <button onclick="goToTab('videos')">📺 Open Videos</button>
                                     <button onclick="goToTab('diagrams')">🎮 Open 2D/3D</button>
                                     <button onclick="goToTab('notes')">📝 Open Notes</button>
-                                    <button onclick="goToTab('registration')">📝 Register Student</button>
                                     <button onclick="goToTab('subjects')">📚 Pick Subjects</button>
                                     <button onclick="goToTab('tools')">⚡ Study Tools</button>
                                     <button onclick="goToTab('api')">🔑 AI Setup</button>
@@ -1957,13 +1937,6 @@
                             </div>
 
                             <div class="section">
-                                <div class="section-title">🤖 AI Subject Suggestions (By Class)</div>
-                                <div id="aiSubjectSuggestions" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; color: #64748b;">
-                                    Select a class above to get AI-recommended subjects you can select or start learning immediately.
-                                </div>
-                            </div>
-                            
-                            <div class="section">
                                 <div class="section-title">🌐 Your Preferred Language</div>
                                 <div class="language-grid" id="languageGrid"></div>
                             </div>
@@ -2036,9 +2009,12 @@
                                 </p>
                                 
                                 <select id="aiModelSelect" class="model-select" onchange="changeAIModel()">
+                                    <option value="auto">⚙️ Auto (Recommended)</option>
                                     <option value="openai">🤖 OpenAI</option>
                                     <option value="gemini">🌀 Gemini</option>
                                     <option value="deepseek">🧠 DeepSeek</option>
+                                    <option value="huggingface">🤗 Hugging Face</option>
+                                    <option value="ollama">🦙 Ollama (Local)</option>
                                 </select>
 
                                 <input type="text" id="aiModelNameInput" class="api-key-input" placeholder="Model name (optional)">
@@ -2048,7 +2024,9 @@
                                     <h4 style="color: #1e293b; margin-bottom: 10px; font-size: 14px;">🔐 Get Free API Keys:</h4>
                                     <p style="font-size: 12px; margin-bottom: 5px;">• OpenAI: platform.openai.com/api-keys</p>
                                     <p style="font-size: 12px; margin-bottom: 5px;">• Google Gemini: makersuite.google.com/app/apikey</p>
-                                    <p style="font-size: 12px;">• DeepSeek: platform.deepseek.com/api_keys</p>
+                                    <p style="font-size: 12px; margin-bottom: 5px;">• DeepSeek: platform.deepseek.com/api_keys</p>
+                                    <p style="font-size: 12px; margin-bottom: 5px;">• Hugging Face: huggingface.co/settings/tokens</p>
+                                    <p style="font-size: 12px;">• Ollama: install local server and pull model</p>
                                 </div>
                                 
                                 <div style="margin-top: 15px;" id="apiStatus">
@@ -2075,14 +2053,7 @@
                                 <span style="margin-left: 10px;">📺 Video • 🎮 2D/3D • 📝 Notes</span>
                             </p>
                         </div>
-                        <div>
-                            <span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 30px; font-size: 11px; font-weight: 600;">
-                                🔴 Continuous Voice
-                            </span>
-                            <button class="header-action tertiary" id="focusModeBtn" onclick="toggleFocusMode()">
-                                🎯 Focus Mode
-                            </button>
-                        </div>
+                        <div></div>
                     </div>
                 </div>
                 
@@ -2090,23 +2061,10 @@
                     <div class="message ai-message">
                         <div class="message-header">
                             🤖 <strong>AI Teacher</strong>
-                            <span style="background: #4f46e5; color: white; padding: 4px 10px; border-radius: 30px; font-size: 10px;">ALL FEATURES</span>
+                            <span style="background: #4f46e5; color: white; padding: 4px 10px; border-radius: 30px; font-size: 10px;">READY</span>
                         </div>
                         <div style="margin-top: 8px;">
-                            <strong>✨ COMPLETE PLATFORM - ALL FEATURES IN SCROLLING TABS!</strong><br><br>
-                            
-                            🎤 <strong>Voice Tab:</strong> Continuous Voice • 6 Languages • Complete Sentences<br>
-                            📺 <strong>Videos Tab:</strong> 24+ Educational Videos • AI Recommendations<br>
-                            🎮 <strong>2D/3D Tab:</strong> Interactive 3D Models • 2D Charts • AI Explanations<br>
-                            📝 <strong>Notes Tab:</strong> AI-Generated Study Notes • Key Concepts<br>
-                            📝 <strong>Register Tab:</strong> Student Registration • Class Selection<br>
-                            📚 <strong>Subjects Tab:</strong> 50+ Subjects • Select/Clear All<br>
-                            ⚡ <strong>Tools Tab:</strong> Notepad • Calculator • Dictionary • 3D Views<br>
-                            🔑 <strong>AI Tab:</strong> 6 AI Models • API Configuration<br><br>
-                            
-                            <span style="background: #dbeafe; padding: 10px; border-radius: 8px; display: block; border-left: 4px solid #3b82f6;">
-                                👉 Scroll the tabs horizontally to access ALL 8 features!
-                            </span>
+                            <strong>Ask your question to start learning.</strong>
                         </div>
                     </div>
                 </div>
@@ -2134,7 +2092,6 @@
         let recognition = null;
         let isListening = false;
         let isContinuousMode = false;
-        let isFocusMode = false;
         let lastAiResponseForSpeech = '';
         let speakTimeoutId = null;
         let isSpeechManuallyStopped = false;
@@ -2147,11 +2104,68 @@
         let threeScene, threeCamera, threeRenderer, threeModel;
         let twoDChart = null;
         let currentTopic = 'photosynthesis';
-        let aiSubjectSuggestions = [];
+        let diagramsInitialized = false;
         
         // ========== AI CONFIGURATION ==========
-        let selectedModel = localStorage.getItem('selectedModel') || 'openai';
+        let selectedModel = localStorage.getItem('selectedModel') || 'auto';
         let selectedModelName = localStorage.getItem('selectedModelName') || '';
+
+        function isRegistered() {
+            return Boolean(studentId && studentName);
+        }
+
+        function enforceRegistrationGate() {
+            const registered = isRegistered();
+            const picker = document.getElementById('tabPicker');
+            const registrationPane = document.getElementById('registration-tab');
+            const chatArea = document.querySelector('.chat-area');
+            const statusBar = document.getElementById('status');
+            const headerSearch = document.querySelector('.header-search');
+            const dashboardShortcutBtn = document.getElementById('dashboardShortcutBtn');
+
+            if (picker) {
+                Array.from(picker.options).forEach((option) => {
+                    if (option.value === 'registration') {
+                        option.style.display = registered ? 'none' : '';
+                        option.disabled = registered;
+                    } else {
+                        option.style.display = '';
+                        option.disabled = !registered;
+                    }
+                });
+                picker.value = registered
+                    ? (picker.value === 'registration' ? 'dashboard' : picker.value)
+                    : 'registration';
+            }
+
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const globalAskInput = document.getElementById('globalAskInput');
+
+            if (messageInput) messageInput.disabled = !registered;
+            if (sendButton) sendButton.disabled = !registered;
+            if (globalAskInput) globalAskInput.disabled = !registered;
+            if (dashboardShortcutBtn) dashboardShortcutBtn.disabled = !registered;
+
+            if (registrationPane) {
+                registrationPane.style.display = registered ? 'none' : 'block';
+            }
+            if (chatArea) {
+                chatArea.style.display = registered ? 'flex' : 'none';
+            }
+            if (statusBar) {
+                statusBar.style.display = registered ? 'block' : 'none';
+            }
+            if (headerSearch) {
+                headerSearch.style.display = registered ? 'flex' : 'none';
+            }
+
+            if (!registered) {
+                switchTab('registration');
+            } else if (picker && picker.value === 'registration') {
+                switchTab('dashboard');
+            }
+        }
         
         // ========== LANGUAGE CODES ==========
         const LANG_CODES = {
@@ -2166,10 +2180,28 @@
         window.addEventListener('load', () => {
             const modelSelect = document.getElementById('aiModelSelect');
             const modelNameInput = document.getElementById('aiModelNameInput');
+            const savedProfileRaw = localStorage.getItem('studentProfile');
+
+            if (savedProfileRaw) {
+                try {
+                    const savedProfile = JSON.parse(savedProfileRaw);
+                    if (savedProfile && savedProfile.studentId && savedProfile.studentName) {
+                        studentId = savedProfile.studentId;
+                        studentName = savedProfile.studentName;
+                        studentLanguage = savedProfile.studentLanguage || studentLanguage;
+                        studentClass = savedProfile.studentClass || studentClass;
+                        document.getElementById('studentInfoDisplay').innerHTML = `👤 ${studentName} • ID: ${studentId}`;
+                    }
+                } catch (err) {
+                    console.error('Failed to restore student profile', err);
+                }
+            }
+
             if (modelSelect) modelSelect.value = selectedModel;
             if (modelNameInput) modelNameInput.value = selectedModelName;
             updateAIModelDisplay();
             checkApiStatus();
+            enforceRegistrationGate();
         });
         
         // ========== NEW: VIDEO DATABASE ==========
@@ -2613,13 +2645,13 @@
             setVoiceInputLanguage('en');
             updateDashboardStats();
             
-            // ========== NEW: Initialize 3D and 2D ==========
+            // ========== NEW: Initialize media widgets ==========
             setTimeout(() => {
-                init3D();
-                init2D();
                 loadVideos('photosynthesis');
                 updateNotes('photosynthesis');
             }, 500);
+
+            enforceRegistrationGate();
         });
         
         // ========== BROWSER DETECTION ==========
@@ -2640,6 +2672,13 @@
         
         // ========== TAB MANAGEMENT ==========
         function switchTab(tabName, sourceElement = null) {
+            if (!isRegistered() && tabName !== 'registration') {
+                tabName = 'registration';
+            }
+            if (isRegistered() && tabName === 'registration') {
+                tabName = 'dashboard';
+            }
+
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const clickedTab = sourceElement && sourceElement.classList && sourceElement.classList.contains('tab')
                 ? sourceElement
@@ -2651,6 +2690,35 @@
             document.getElementById(`${tabName}-tab`).classList.add('active');
             const picker = document.getElementById('tabPicker');
             if (picker) picker.value = tabName;
+
+            if (tabName === 'diagrams') {
+                ensureDiagramsReady();
+            }
+        }
+
+        function ensureDiagramsReady() {
+            setTimeout(() => {
+                if (!diagramsInitialized) {
+                    init3D();
+                    init2D();
+                    diagramsInitialized = true;
+                }
+
+                if (threeRenderer && threeCamera) {
+                    const container = document.getElementById('diagram3d-container');
+                    if (container) {
+                        const width = container.clientWidth || container.offsetWidth || 400;
+                        const height = container.clientHeight || 220;
+                        threeRenderer.setSize(width, height);
+                        threeCamera.aspect = width / height;
+                        threeCamera.updateProjectionMatrix();
+                    }
+                }
+
+                if (twoDChart) {
+                    twoDChart.resize();
+                }
+            }, 80);
         }
 
         function goToTab(tabName) {
@@ -2666,15 +2734,6 @@
             switchTab('voice');
             sendMessage();
             input.value = '';
-        }
-
-        function toggleFocusMode() {
-            isFocusMode = !isFocusMode;
-            document.body.classList.toggle('focus-mode', isFocusMode);
-            const btn = document.getElementById('focusModeBtn');
-            if (btn) {
-                btn.innerHTML = isFocusMode ? '🧘 Exit Focus' : '🧘 Focus Mode';
-            }
         }
 
         function updateDashboardStats() {
@@ -2701,7 +2760,6 @@
             document.getElementById('currentResponseLanguage').innerHTML = `<span>🔵</span> Current Response Language: ${LANG_CODES[lang].name} - I will reply in ${LANG_CODES[lang].name}`;
             document.getElementById('responseLangDisplay').innerHTML = `🌐 Response: ${LANG_CODES[lang].name}`;
             
-            showMessage(`🌐 Response language changed to ${LANG_CODES[lang].name} - I will now reply in ${LANG_CODES[lang].name}`, 'ai');
         }
         
         // ========== VOICE INPUT LANGUAGE ==========
@@ -2793,7 +2851,6 @@
                 if (isFinal && transcript.trim() !== '') {
                     if (isStopCommand(transcript)) {
                         stopAllVoice();
-                        showMessage('⏹️ Stopped voice listening and speaking.', 'ai');
                         return;
                     }
 
@@ -3138,7 +3195,6 @@
             localStorage.removeItem('voiceHistory');
             updateVoiceHistoryDisplay();
             updateDashboardStats();
-            showMessage('🗑️ Voice history cleared', 'ai');
         }
         
         // ========== CHAT FUNCTIONS ==========
@@ -3149,23 +3205,18 @@
     if (!message) return;
 
     if (isStopCommand(message)) {
-        showMessage(message, 'user');
         input.value = '';
         stopAllVoice();
-        showMessage('⏹️ Stopped voice listening and speaking.', 'ai');
         return;
     }
 
-    if (!studentId) {
-        showMessage('⚠️ Please complete registration first.', 'ai');
+        if (!studentId) {
         switchTab('registration');
         return;
     }
 
     showMessage(message, 'user');
     input.value = '';
-
-    showMessage("Thinking...", "ai");
 
     try {
         const response = await fetch(`${API_BASE}/chat`, {
@@ -3176,9 +3227,9 @@
             body: JSON.stringify({
                 message: message,
                 language: studentLanguage || "english",
-                student_id: studentId || "student001",
+                student_id: studentId,
                 subject: "general",
-                model_provider: selectedModel || undefined,
+                model_provider: selectedModel && selectedModel !== 'auto' ? selectedModel : undefined,
                 model_name: selectedModelName || undefined
             })
         });
@@ -3188,25 +3239,9 @@
             throw new Error(data?.detail || `Request failed with status ${response.status}`);
         }
 
-        const chatBox = document.getElementById('chatBox');
-        if (chatBox.lastChild) {
-            chatBox.removeChild(chatBox.lastChild);
-        }
-
         showMessage(data.reply, "ai");
-        if (data.explanation && data.explanation.toLowerCase().includes("offline mode")) {
-            showMessage(`⚠️ ${data.explanation}`, "ai");
-        }
-        if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
-            const topSuggestions = data.suggestions.slice(0, 2).join(" | ");
-            showMessage(`💡 ${topSuggestions}`, "ai");
-        }
 
     } catch (error) {
-        const chatBox = document.getElementById('chatBox');
-        if (chatBox.lastChild) {
-            chatBox.removeChild(chatBox.lastChild);
-        }
         showMessage(`Backend error: ${error.message || "Make sure server is running."}`, "ai");
         console.error(error);
     }
@@ -3288,7 +3323,6 @@
             document.querySelectorAll('.class-option').forEach(el => el.classList.remove('selected'));
             e.target.classList.add('selected');
             studentClass = value;
-            fetchClassSubjectSuggestions(value);
         }
         
         // ========== LANGUAGE MANAGEMENT ==========
@@ -3305,9 +3339,6 @@
                     document.querySelectorAll('.language-option').forEach(el => el.classList.remove('selected'));
                     e.target.classList.add('selected');
                     studentLanguage = lang.value;
-                    if (studentClass) {
-                        fetchClassSubjectSuggestions(studentClass);
-                    }
                 };
                 languageGrid.appendChild(div);
             });
@@ -3383,94 +3414,6 @@
             updateDashboardStats();
         }
 
-        async function fetchClassSubjectSuggestions(classGrade) {
-            const container = document.getElementById('aiSubjectSuggestions');
-            if (!container || !classGrade) return;
-
-            container.innerHTML = `🔎 Finding best subjects for <strong>${classGrade}</strong>...`;
-
-            try {
-                const lang = studentLanguage || "english";
-                const response = await fetch(`${API_BASE}/subject-suggestions/${encodeURIComponent(classGrade)}?language=${encodeURIComponent(lang)}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data?.detail || `Request failed with status ${response.status}`);
-                }
-
-                aiSubjectSuggestions = Array.isArray(data.recommended_subjects) ? data.recommended_subjects : [];
-                renderClassSubjectSuggestions(classGrade, aiSubjectSuggestions, data.learning_tip || "");
-            } catch (error) {
-                container.innerHTML = `<span style="color:#b91c1c;">Could not load class-based subject suggestions.</span>`;
-                console.error(error);
-            }
-        }
-
-        function renderClassSubjectSuggestions(classGrade, suggestions, learningTip) {
-            const container = document.getElementById('aiSubjectSuggestions');
-            if (!container) return;
-
-            if (!Array.isArray(suggestions) || suggestions.length === 0) {
-                container.innerHTML = `No suggestions available for ${classGrade}.`;
-                return;
-            }
-
-            let html = `
-                <div style="margin-bottom: 10px; color:#0f172a;">
-                    <strong>Class ${classGrade} - Recommended Subjects</strong>
-                </div>
-            `;
-
-            suggestions.forEach((item) => {
-                const subject = item.subject || "Subject";
-                const reason = item.reason || "Recommended for your class level.";
-                const priority = item.priority || "-";
-                html += `
-                    <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin-bottom:8px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                            <div><strong>${subject}</strong> <span style="font-size:12px; color:#475569;">(Priority ${priority})</span></div>
-                            <div style="display:flex; gap:6px;">
-                                <button onclick="addSuggestedSubject('${subject.replace(/'/g, "\\'")}')" style="margin:0; width:auto; padding:8px 10px; font-size:12px; background:#10b981;">➕ Select</button>
-                                <button onclick="learnSuggestedSubject('${subject.replace(/'/g, "\\'")}')" style="margin:0; width:auto; padding:8px 10px; font-size:12px; background:#2563eb;">📘 Learn</button>
-                            </div>
-                        </div>
-                        <div style="margin-top:6px; font-size:13px; color:#334155;">${reason}</div>
-                    </div>
-                `;
-            });
-
-            if (learningTip) {
-                html += `<div style="margin-top:8px; font-size:13px; color:#334155;"><strong>Tip:</strong> ${learningTip}</div>`;
-            }
-
-            container.innerHTML = html;
-        }
-
-        function addSuggestedSubject(subject) {
-            const normalized = String(subject || "").toLowerCase();
-            const checkboxes = Array.from(document.querySelectorAll('.subject-checkbox input'));
-            const match = checkboxes.find(cb => String(cb.value || "").toLowerCase() === normalized);
-
-            if (match) {
-                if (!match.checked) {
-                    match.checked = true;
-                    updateSelectedSubjects(match);
-                }
-            } else {
-                selectedSubjects.add(subject);
-                updateDashboardStats();
-            }
-
-            showMessage(`✅ Added subject: ${subject}`, 'ai');
-            switchTab('subjects');
-        }
-
-        function learnSuggestedSubject(subject) {
-            const prompt = `Teach me ${subject} for ${studentClass || 'my class'} in easy steps with examples and practice questions.`;
-            switchTab('voice');
-            quickQuestion(prompt);
-        }
-        
         // ========== REGISTRATION ==========
         function registerStudent() {
             const name = document.getElementById('studentName').value.trim();
@@ -3479,22 +3422,29 @@
             const email = document.getElementById('studentEmail').value;
             
             if (!name || !school || !studentClass || !mobile) {
-                showMessage('❌ Please fill all required fields!', 'ai');
+                alert('Please fill all required fields.');
                 return;
             }
             
             if (mobile.length !== 10) {
-                showMessage('❌ Mobile number must be 10 digits', 'ai');
+                alert('Mobile number must be 10 digits.');
                 return;
             }
             
             studentName = name;
             studentId = 'STU' + Math.floor(Math.random() * 10000);
+
+            localStorage.setItem('studentProfile', JSON.stringify({
+                studentId,
+                studentName,
+                studentLanguage,
+                studentClass
+            }));
             
             document.getElementById('studentInfoDisplay').innerHTML = `👤 ${name} • ID: ${studentId}`;
             updateDashboardStats();
-            const topSubjects = aiSubjectSuggestions.slice(0, 3).map(s => s.subject).join(', ');
-            showMessage(`✅ Registration Successful!<br>Name: ${name}<br>School: ${school}<br>Student ID: ${studentId}<br>Class: ${studentClass}${topSubjects ? `<br>AI Suggested: ${topSubjects}` : ''}`, 'ai');
+            enforceRegistrationGate();
+            switchTab('dashboard');
         }
         
         // ========== AI MODEL FUNCTIONS ==========
@@ -3503,23 +3453,24 @@
             localStorage.setItem('selectedModel', selectedModel);
             updateAIModelDisplay();
             updateDashboardStats();
-            showMessage(`🤖 AI model changed to ${selectedModel}`, 'ai');
         }
         
         function saveModelName() {
             selectedModelName = document.getElementById('aiModelNameInput').value.trim();
             localStorage.setItem('selectedModelName', selectedModelName);
             updateAIModelDisplay();
-            showMessage('✅ Model name saved!', 'ai');
         }
         
         function updateAIModelDisplay() {
             const modelNames = {
+                auto: 'Auto',
                 openai: 'OpenAI',
                 gemini: 'Gemini',
-                deepseek: 'DeepSeek'
+                deepseek: 'DeepSeek',
+                huggingface: 'Hugging Face',
+                ollama: 'Ollama'
             };
-            const displayName = modelNames[selectedModel] || 'OpenAI';
+            const displayName = modelNames[selectedModel] || 'Auto';
             const suffix = selectedModelName ? ` • ${selectedModelName}` : '';
             document.getElementById('aiModelDisplay').innerHTML = `🤖 ${displayName}${suffix}`;
         }
@@ -3532,14 +3483,14 @@
         }
         
         // ========== TOOL FUNCTIONS ==========
-        function openNotepad() { showMessage('📝 Opening Notepad...', 'ai'); }
-        function openCalculator() { showMessage('🧮 Opening Calculator...', 'ai'); }
-        function openDictionary() { showMessage('📖 Opening Dictionary...', 'ai'); }
-        function openConverter() { showMessage('🔄 Opening Converter...', 'ai'); }
-        function openTimer() { showMessage('⏱️ Opening Timer...', 'ai'); }
-        function openPlanner() { showMessage('📅 Opening Planner...', 'ai'); }
-        function openFlashcards() { showMessage('🃏 Opening Flashcards...', 'ai'); }
-        function openMindMap() { showMessage('🗺️ Opening Mind Map...', 'ai'); }
+        function openNotepad() {}
+        function openCalculator() {}
+        function openDictionary() {}
+        function openConverter() {}
+        function openTimer() {}
+        function openPlanner() {}
+        function openFlashcards() {}
+        function openMindMap() {}
         
         function open3DViewer(type) {
             const types = {
@@ -3550,11 +3501,11 @@
                 'astronomy': 'Solar System',
                 'biology': 'Cell Structure'
             };
-            showMessage(`🎮 Opening 3D ${types[type] || type}...`, 'ai');
+            console.log(`Opening 3D ${types[type] || type}`);
         }
         
-        function exportData() { showMessage('📤 Exporting data...', 'ai'); }
-        function showHelp() { showMessage('❓ Opening help guide...', 'ai'); }
+        function exportData() {}
+        function showHelp() {}
         
         function clearChat() {
             if (confirm('Clear all chat messages?')) {
@@ -3562,13 +3513,10 @@
                     <div class="message ai-message">
                         <div class="message-header">
                             🤖 <strong>AI Teacher</strong>
-                            <span style="background: #4f46e5; color: white; padding: 4px 10px; border-radius: 30px; font-size: 10px;">ALL FEATURES</span>
+                            <span style="background: #4f46e5; color: white; padding: 4px 10px; border-radius: 30px; font-size: 10px;">READY</span>
                         </div>
                         <div style="margin-top: 8px;">
-                            <strong>✨ COMPLETE PLATFORM - 8 SCROLLING TABS!</strong><br><br>
-                            🎤 Voice • 📺 Videos • 🎮 2D/3D • 📝 Notes<br>
-                            📝 Register • 📚 Subjects • ⚡ Tools • 🔑 AI<br><br>
-                            Scroll horizontally to access all features!
+                            <strong>Ask your question to start learning.</strong>
                         </div>
                     </div>
                 `;
@@ -3727,13 +3675,18 @@
         function init2D() {
             const container = document.getElementById('diagram2d-container');
             if (!container) return;
+
+            if (typeof Chart === 'undefined') {
+                container.innerHTML = '<div style="padding:10px;color:#b91c1c;">2D diagrams unavailable: Chart.js failed to load.</div>';
+                return;
+            }
             
             container.innerHTML = '';
             
             const canvas = document.createElement('canvas');
             canvas.id = 'topicChart';
-            canvas.width = container.clientWidth || 400;
-            canvas.height = 200;
+            canvas.width = container.clientWidth || container.offsetWidth || 400;
+            canvas.height = container.clientHeight || 200;
             container.appendChild(canvas);
 
             render2DChart(
@@ -3861,17 +3814,26 @@
         function init3D() {
             const container = document.getElementById('diagram3d-container');
             if (!container) return;
+
+            if (typeof THREE === 'undefined') {
+                container.innerHTML = '<div style="padding:10px;color:#b91c1c;">3D diagrams unavailable: Three.js failed to load.</div>';
+                return;
+            }
             
             threeScene = new THREE.Scene();
             threeScene.background = new THREE.Color(0x1a1c2c);
+
+            const width = container.clientWidth || container.offsetWidth || 400;
+            const height = container.clientHeight || 220;
             
-            threeCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            threeCamera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
             threeCamera.position.set(2, 1.5, 3);
             threeCamera.lookAt(0, 0, 0);
             
             threeRenderer = new THREE.WebGLRenderer({ antialias: true });
-            threeRenderer.setSize(container.clientWidth, container.clientHeight);
+            threeRenderer.setSize(width, height);
             threeRenderer.shadowMap.enabled = true;
+            container.innerHTML = '';
             container.appendChild(threeRenderer.domElement);
             
             const ambientLight = new THREE.AmbientLight(0x404060);
@@ -3898,8 +3860,8 @@
             animate();
             
             window.addEventListener('resize', () => {
-                const width = container.clientWidth;
-                const height = container.clientHeight;
+                const width = container.clientWidth || container.offsetWidth || 400;
+                const height = container.clientHeight || 220;
                 threeRenderer.setSize(width, height);
                 threeCamera.aspect = width / height;
                 threeCamera.updateProjectionMatrix();
