@@ -211,7 +211,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     language: str
-    explanation: str
+    explanation: str = ""
     suggestions: List[str]
     student_id: Optional[str] = None
 
@@ -771,88 +771,389 @@ async def voice_chat(audio_file: UploadFile = File(...), language: str = "en-IN"
 
 async def get_ai_response(message: str, language: str = "english"):
     """
-    Helper function to generate AI response
+    Offline helper that gives structured educational responses when no live provider is available.
     """
-    # Multi-language responses
-    responses = {
+    def _normalize_common_topic_variants(text: str) -> str:
+        normalized = (text or "")
+        replacements = [
+            (r"\bunsuper\s*vised\b", "unsupervised"),
+            (r"\bsuper\s*vised\b", "supervised"),
+            (r"\breinforce\s*ment\b", "reinforcement"),
+            (r"\bmachine\s*learning\b", "machine learning"),
+        ]
+        for pattern, replacement in replacements:
+            normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+        return normalized
+
+    def _extract_topic(text: str) -> str:
+        cleaned_text = re.sub(r"\s+", " ", (text or "").strip(" ?."))
+        patterns = [
+            r"^(?:what is|what are|define|explain)\s+(.+)$",
+            r"^(?:who is|who was)\s+(.+)$",
+            r"^(?:how does|how do|how can)\s+(.+)$",
+            r"^(?:solve|calculate|find)\s+(.+)$",
+        ]
+        lowered_text = cleaned_text.lower()
+        for pattern in patterns:
+            match = re.match(pattern, lowered_text)
+            if match:
+                extracted = match.group(1).strip()
+                if extracted:
+                    return extracted
+        return cleaned_text or "this topic"
+
+    def _normalize_topic_label(text: str) -> str:
+        topic = _extract_topic(text)
+        topic = re.sub(r"\bfor class\s+\d+\b", "", topic, flags=re.IGNORECASE)
+        topic = re.sub(r"\bclass\s+\d+\b", "", topic, flags=re.IGNORECASE)
+        topic = re.sub(r"\bfor students\b", "", topic, flags=re.IGNORECASE)
+        topic = re.sub(r"\bstep by step\b", "", topic, flags=re.IGNORECASE)
+        topic = re.sub(r"\s+", " ", topic).strip(" ,.-")
+        return topic or "this topic"
+
+    def _build_generic_offline_response(topic: str, topic_title: str, lowered_message: str) -> str:
+        domain_rules = [
+            (
+                {"learning", "algorithm", "data", "computer", "program", "network", "database", "coding", "software", "ai"},
+                f"{topic_title} is a concept in computer science or technology.",
+                f"It is usually studied to understand how {topic} works, what parts it uses, and where it is applied.",
+                f"In practice, {topic} is connected to problem-solving, systems, or digital tools.",
+            ),
+            (
+                {"cell", "plant", "animal", "body", "heart", "dna", "gene", "blood", "photosynthesis", "digestion"},
+                f"{topic_title} is a concept in biology or life science.",
+                f"It helps explain a natural process, body function, living structure, or scientific idea related to {topic}.",
+                f"In real life, {topic} is understood by connecting it to organisms, health, or the environment.",
+            ),
+            (
+                {"force", "energy", "motion", "electricity", "sound", "light", "gravity", "atom", "quantum"},
+                f"{topic_title} is a concept in physics.",
+                f"It explains how matter, energy, forces, or motion are related to {topic}.",
+                f"In real life, {topic} can be observed in machines, movement, electricity, or natural events.",
+            ),
+            (
+                {"fraction", "algebra", "equation", "number", "geometry", "ratio", "percentage", "probability"},
+                f"{topic_title} is a mathematics topic.",
+                f"It is learned by understanding the rule or formula behind {topic} and then practicing questions.",
+                f"In real life, {topic} is useful in measurement, calculation, comparison, and problem-solving.",
+            ),
+        ]
+
+        topic_tokens = set(re.findall(r"[a-zA-Z]+", f"{topic} {lowered_message}".lower()))
+        intro = f"{topic_title} is an important topic."
+        concept_line = f"It is studied to understand what {topic} means, how it works, and where it is used."
+        example_line = f"A good way to learn {topic} is to connect the definition with one simple real-life example."
+
+        for keywords, domain_intro, domain_concept, domain_example in domain_rules:
+            if topic_tokens.intersection(keywords):
+                intro = domain_intro
+                concept_line = domain_concept
+                example_line = domain_example
+                break
+
+        return (
+            f"{intro}\n"
+            f"1. Start with the definition: understand the basic meaning of {topic}.\n"
+            f"2. Focus on the main idea: {concept_line}\n"
+            f"3. Learn the key parts, rules, steps, or components related to {topic}.\n"
+            f"4. Use one example to see how {topic} works in a real situation.\n"
+            f"5. Remember why it matters and where it is commonly applied.\n\n"
+            f"Summary: {example_line}"
+        )
+
+    lang = language if language in {
+        "english", "hindi", "tamil", "telugu", "marathi", "gujarati", "bengali"
+    } else "english"
+    normalized_message = _normalize_common_topic_variants(message or "")
+    message_lower = normalized_message.lower().strip()
+
+    localized_defaults = {
         "english": {
-            "greeting": "Hello! I'm your AI teacher. How can I help you learn today?",
-            "math_help": "I can help you with mathematics. Let's solve problems step by step.",
-            "science_help": "Science is fascinating! What topic would you like to explore?",
-            "ml_help": "Machine Learning (ML) is a part of AI where computers learn patterns from data to make predictions or decisions without being explicitly programmed for every rule.",
-            "default": "That's interesting! Let me help you understand that better."
+            "greeting": "Hello! I can still help in offline mode. Ask me a topic like fractions, photosynthesis, gravity, or machine learning.",
+            "generic": "Here is a simple explanation of the topic."
         },
         "hindi": {
-            "greeting": "नमस्ते! मैं आपका AI शिक्षक हूं। आज आप क्या सीखना चाहेंगे?",
-            "math_help": "मैं आपकी गणित में मदद कर सकता हूं। चलिए कदम दर कदम समस्याएं हल करते हैं।",
-            "science_help": "विज्ञान बहुत रोचक है! आप कौन सा विषय जानना चाहेंगे?",
-            "ml_help": "मशीन लर्निंग (ML), AI का एक भाग है जिसमें कंप्यूटर डेटा से पैटर्न सीखकर निर्णय या भविष्यवाणी करना सीखते हैं।",
-            "default": "यह दिलचस्प है! मुझे आपको इसे बेहतर समझने में मदद करने दें।"
+            "greeting": "नमस्ते! मैं ऑफलाइन मोड में भी मदद कर सकता हूं। fractions, photosynthesis, gravity या machine learning जैसे विषय पूछें।",
+            "generic": "यहाँ विषय की आसान व्याख्या दी गई है।"
         },
         "tamil": {
-            "greeting": "வணக்கம்! நான் உங்கள் AI ஆசிரியர். இன்று நீங்கள் என்ன கற்க விரும்புகிறீர்கள்?",
-            "math_help": "நான் கணிதத்தில் உங்களுக்கு உதவ முடியும். படிப்படியாக சிக்கல்களை தீர்ப்போம்.",
-            "science_help": "அறிவியல் மிகவும் சுவாரஸ்யமானது! நீங்கள் எந்த தலைப்பை ஆராய விரும்புகிறீர்கள்?",
-            "ml_help": "மெஷின் லெர்னிங் (ML) என்பது AI-யின் ஒரு பகுதி. இதில் கணினி தரவிலிருந்து வடிவங்களை கற்று முடிவுகள் அல்லது கணிப்புகள் செய்கிறது.",
-            "default": "அது சுவாரஸ்யமானது! அதை நன்றாக புரிந்துகொள்ள நான் உங்களுக்கு உதவுகிறேன்."
+            "greeting": "வணக்கம்! ஆஃப்லைன் முறையிலும் நான் உதவலாம். fractions, photosynthesis, gravity அல்லது machine learning போன்ற தலைப்புகளை கேளுங்கள்.",
+            "generic": "இதோ தலைப்பின் எளிய விளக்கம்."
         },
         "telugu": {
-            "greeting": "నమస్కారం! నేను మీ AI టీచర్ని. ఈరోజు మీరు ఏమి నేర్చుకోవాలనుకుంటున్నారు?",
-            "math_help": "నేను మీకు గణితంలో సహాయం చేయగలను. దశలవారీగా సమస్యలను పరిష్కరిద్దాం.",
-            "science_help": "సైన్స్ చాలా ఆసక్తికరంగా ఉంటుంది! మీరు ఏ అంశాన్ని అన్వేషించాలనుకుంటున్నారు?",
-            "ml_help": "మెషిన్ లెర్నింగ్ (ML) అనేది AIలోని భాగం. డేటా నుండి నమూనాలను నేర్చుకుని కంప్యూటర్ నిర్ణయాలు లేదా అంచనాలు వేస్తుంది.",
-            "default": "ఇది ఆసక్తికరంగా ఉంది! దాన్ని బాగా అర్థం చేసుకోవడానికి నేను మీకు సహాయం చేస్తాను."
+            "greeting": "నమస్కారం! ఆఫ్లైన్ మోడ్‌లో కూడా నేను సహాయం చేయగలను. fractions, photosynthesis, gravity లేదా machine learning వంటి విషయాలు అడగండి.",
+            "generic": "ఇది ఆ విషయానికి సరళమైన వివరణ."
         },
         "marathi": {
-            "greeting": "नमस्कार! मी तुमचा AI शिक्षक आहे. आज तुम्हाला काय शिकायचे आहे?",
-            "math_help": "मी गणितात मदत करू शकतो. चला, प्रश्न पायरीपायरीने सोडवूया.",
-            "science_help": "विज्ञान खूप रोचक आहे! तुम्हाला कोणता विषय शिकायचा आहे?",
-            "ml_help": "मशीन लर्निंग (ML) हे AI चे एक शाखा आहे. यात संगणक डेटा मधील नमुने शिकून निर्णय किंवा अंदाज करतो.",
-            "default": "छान प्रश्न आहे! मी तुम्हाला हे अधिक स्पष्टपणे समजावतो."
+            "greeting": "नमस्कार! ऑफलाइन मोडमध्येही मी मदत करू शकतो. fractions, photosynthesis, gravity किंवा machine learning सारखे विषय विचारा.",
+            "generic": "या विषयाचे सोपे स्पष्टीकरण येथे दिले आहे."
         },
         "gujarati": {
-            "greeting": "નમસ્તે! હું તમારો AI શિક્ષક છું. આજે તમે શું શીખવા માંગો છો?",
-            "math_help": "હું તમને ગણિતમાં મદદ કરી શકું છું. ચાલો પગલુંદર પગલું પ્રશ્નો ઉકેલીએ.",
-            "science_help": "વિજ્ઞાન ખૂબ રસપ્રદ છે! તમે કયો વિષય સમજવા માંગો છો?",
-            "ml_help": "મશીન લર્નિંગ (ML) એ AI નો ભાગ છે જેમાં કમ્પ્યુટર ડેટામાંથી પેટર્ન શીખીને આગાહી અથવા નિર્ણય લે છે.",
-            "default": "સારો પ્રશ્ન છે! હું તમને આ વધુ સારી રીતે સમજાવીશ."
+            "greeting": "નમસ્તે! ઑફલાઇન મોડમાં પણ હું મદદ કરી શકું છું. fractions, photosynthesis, gravity અથવા machine learning જેવા વિષયો પૂછો.",
+            "generic": "અહીં વિષયનું સરળ સમજૂતી આપવામાં આવ્યું છે."
         },
         "bengali": {
-            "greeting": "নমস্কার! আমি তোমার AI শিক্ষক। আজ তুমি কী শিখতে চাও?",
-            "math_help": "আমি গণিতে সাহায্য করতে পারি। ধাপে ধাপে সমস্যা সমাধান করি।",
-            "science_help": "বিজ্ঞান খুবই আকর্ষণীয়! তুমি কোন বিষয় শিখতে চাও?",
-            "ml_help": "মেশিন লার্নিং (ML) হল AI-এর একটি অংশ যেখানে কম্পিউটার ডেটা থেকে প্যাটার্ন শিখে সিদ্ধান্ত বা পূর্বাভাস দেয়।",
-            "default": "চমৎকার প্রশ্ন! আমি এটা আরও ভালোভাবে বুঝিয়ে দিচ্ছি।"
-        }
+            "greeting": "নমস্কার! অফলাইন মোডেও আমি সাহায্য করতে পারি। fractions, photosynthesis, gravity বা machine learning-এর মতো বিষয় জিজ্ঞাসা করো।",
+            "generic": "এখানে বিষয়টির সহজ ব্যাখ্যা দেওয়া হলো।"
+        },
     }
-    
-    message_lower = message.lower()
-    lang = language if language in responses else "english"
-    lang_responses = responses[lang]
-    
-    # Check for greetings
-    greetings = ["hello", "hi", "hey", "नमस्ते", "வணக்கம்", "నమస్కారం", "नमस्कार", "નમસ્તે", "নমস্কার"]
-    if any(greeting in message_lower for greeting in greetings):
-        return lang_responses["greeting"]
-    
-    # Check for math-related queries
-    math_words = ["math", "गणित", "கணிதம்", "గణితం", "गणित", "ગણિત", "গণিত", "calculate", "addition", "subtraction",
-                  "multiplication", "division", "algebra", "geometry"]
-    if any(word in message_lower for word in math_words):
-        return lang_responses["math_help"]
-    
-    # Check for science-related queries
-    science_words = ["science", "विज्ञान", "அறிவியல்", "సైన్స్", "विज्ञान", "વિજ્ઞાન", "বিজ্ঞান", "physics", "chemistry",
-                     "biology", "experiment", "reaction"]
-    if any(word in message_lower for word in science_words):
-        return lang_responses["science_help"]
 
-    # Check for AI/ML-related queries
-    ml_words = ["ml", "machine learning", "artificial intelligence", "ai", "neural network", "model training"]
-    if any(word in message_lower for word in ml_words):
-        return lang_responses.get("ml_help", lang_responses["default"])
-    
-    return lang_responses["default"]
+    if any(greeting in message_lower for greeting in ["hello", "hi", "hey", "नमस्ते", "வணக்கம்", "నమస్కారం", "नमस्कार", "નમસ્તે", "নমস্কার"]):
+        return localized_defaults[lang]["greeting"]
+
+    topic_map = {
+        "photosynthesis": {
+            "keywords": ["photosynthesis", "plant food", "chlorophyll"],
+            "response": (
+                "Photosynthesis is how green plants make their own food.\n"
+                "1. Roots absorb water from the soil.\n"
+                "2. Leaves take in carbon dioxide from the air.\n"
+                "3. Chlorophyll traps sunlight.\n"
+                "4. The plant uses sunlight to turn water and carbon dioxide into glucose, which is food.\n"
+                "5. Oxygen is released into the air.\n\n"
+                "Summary: sunlight + water + carbon dioxide -> food + oxygen.\n"
+                "Practice: Why are leaves important in photosynthesis?"
+            ),
+        },
+        "gravity": {
+            "keywords": ["gravity", "gravitational", "falling objects", "newton law of gravitation"],
+            "response": (
+                "Gravity is the force that pulls objects toward each other.\n"
+                "1. Earth pulls everything toward its center.\n"
+                "2. That is why objects fall down when dropped.\n"
+                "3. Gravity keeps us on the ground.\n"
+                "4. Gravity also keeps the Moon around Earth and planets around the Sun.\n\n"
+                "Summary: gravity is an invisible pulling force.\n"
+                "Practice: Why does a ball fall back to the ground after being thrown upward?"
+            ),
+        },
+        "fractions": {
+            "keywords": ["fraction", "fractions", "numerator", "denominator", "half", "quarter"],
+            "response": (
+                "A fraction shows equal parts of a whole.\n"
+                "1. The top number is the numerator. It tells how many parts we have.\n"
+                "2. The bottom number is the denominator. It tells how many equal parts make the whole.\n"
+                "3. In 3/4, 3 is the numerator and 4 is the denominator.\n"
+                "4. Fractions can represent parts of pizza, chocolate, time, and distance.\n\n"
+                "Summary: fractions describe parts of one complete thing.\n"
+                "Practice: In 2/5, which number is the denominator?"
+            ),
+        },
+        "algebra": {
+            "keywords": ["algebra", "equation", "variable", "solve for x"],
+            "response": (
+                "Algebra uses letters to represent unknown numbers.\n"
+                "1. A variable like x stands for a value we need to find.\n"
+                "2. An equation shows two expressions are equal.\n"
+                "3. To solve, do the same operation on both sides.\n"
+                "4. Example: x + 3 = 7, so subtract 3 from both sides and get x = 4.\n\n"
+                "Summary: algebra helps us find unknown values logically.\n"
+                "Practice: Solve x + 5 = 11."
+            ),
+        },
+        "neural_networks": {
+            "keywords": ["neural network", "neural networks", "artificial neuron", "deep learning model"],
+            "response": (
+                "A neural network is a machine learning model inspired by the way brain cells connect and pass signals.\n"
+                "1. It is made of layers of small units called neurons.\n"
+                "2. The input layer receives data, hidden layers process patterns, and the output layer gives the result.\n"
+                "3. During training, the network adjusts weights so it can make better predictions.\n"
+                "4. Neural networks are used in image recognition, speech recognition, translation, and recommendation systems.\n\n"
+                "Summary: a neural network learns patterns by passing data through connected layers.\n"
+                "Practice: What do hidden layers do in a neural network?"
+            ),
+        },
+        "machine_learning": {
+            "keywords": ["machine learning", "ml", "artificial intelligence", "ai model", " ai ", "what is ai", "ai?"],
+            "response": (
+                "Artificial intelligence, or AI, is when computers do tasks that usually need human thinking.\n"
+                "1. AI can learn from data, follow rules, and find patterns.\n"
+                "2. It is used to answer questions, translate languages, recognize images, and recommend videos.\n"
+                "3. Machine learning is one important part of AI.\n"
+                "4. In real life, AI appears in chatbots, maps, voice assistants, and spam filters.\n\n"
+                "Summary: AI helps computers act in smart ways to solve problems.\n"
+                "Practice: Name one app or device where you have seen AI."
+            ),
+        },
+        "unsupervised_learning": {
+            "keywords": ["unsupervised learning", "clustering", "k means", "k-means"],
+            "response": (
+                "Unsupervised learning is a type of machine learning where the computer learns patterns from data without being given correct answers.\n"
+                "1. The data is not labeled, so the computer must find groups or patterns on its own.\n"
+                "2. It is often used for clustering similar items together.\n"
+                "3. For example, it can group customers with similar buying habits.\n"
+                "4. Common methods include clustering and dimensionality reduction.\n\n"
+                "Summary: unsupervised learning finds hidden patterns in unlabeled data.\n"
+                "Practice: What is the main difference between labeled and unlabeled data?"
+            ),
+        },
+        "supervised_learning": {
+            "keywords": ["supervised learning", "labeled data", "classification", "regression"],
+            "response": (
+                "Supervised learning is a type of machine learning where the computer learns from labeled examples.\n"
+                "1. Each training example includes the correct answer.\n"
+                "2. The model learns the relationship between input and output.\n"
+                "3. It is used in tasks like classification and prediction.\n"
+                "4. For example, it can learn to identify spam emails using labeled spam and non-spam examples.\n\n"
+                "Summary: supervised learning uses labeled data to learn correct outputs.\n"
+                "Practice: Why are labels important in supervised learning?"
+            ),
+        },
+        "reinforcement_learning": {
+            "keywords": ["reinforcement learning", "agent", "reward", "penalty"],
+            "response": (
+                "Reinforcement learning is a type of machine learning where an agent learns by trial and error.\n"
+                "1. The agent takes actions in an environment.\n"
+                "2. It receives rewards for good actions and penalties for bad ones.\n"
+                "3. Over time, it learns which actions give the best result.\n"
+                "4. It is used in robotics, games, and decision-making systems.\n\n"
+                "Summary: reinforcement learning improves behavior by learning from rewards and penalties.\n"
+                "Practice: What helps the agent know which action is better?"
+            ),
+        },
+        "water_cycle": {
+            "keywords": ["water cycle", "evaporation", "condensation", "precipitation"],
+            "response": (
+                "The water cycle shows how water moves around Earth.\n"
+                "1. Heat from the Sun causes evaporation.\n"
+                "2. Water vapor rises and cools.\n"
+                "3. It condenses into clouds.\n"
+                "4. When droplets become heavy, precipitation falls as rain or snow.\n"
+                "5. Water collects in rivers, lakes, and oceans, and the cycle repeats.\n\n"
+                "Summary: evaporation, condensation, and precipitation are the key stages.\n"
+                "Practice: What role does the Sun play in the water cycle?"
+            ),
+        },
+        "cell": {
+            "keywords": ["cell", "cells", "plant cell", "animal cell", "nucleus"],
+            "response": (
+                "A cell is the basic unit of life.\n"
+                "1. All living things are made of cells.\n"
+                "2. The nucleus controls cell activities.\n"
+                "3. Cytoplasm holds the parts of the cell.\n"
+                "4. The cell membrane controls what goes in and out.\n"
+                "5. Plant cells also have a cell wall and chloroplasts.\n\n"
+                "Summary: cells are the tiny building blocks of organisms.\n"
+                "Practice: Name one part found in plant cells but not in animal cells."
+            ),
+        },
+        "solar_system": {
+            "keywords": ["solar system", "planets", "sun", "earth and planets"],
+            "response": (
+                "The solar system includes the Sun and the objects that move around it.\n"
+                "1. The Sun is a star and the center of the solar system.\n"
+                "2. Eight planets revolve around the Sun.\n"
+                "3. Earth is the third planet from the Sun.\n"
+                "4. Gravity keeps planets in orbit.\n\n"
+                "Summary: the Sun is central, and planets move around it because of gravity.\n"
+                "Practice: Which planet do we live on?"
+            ),
+        },
+        "blockchain": {
+            "keywords": ["blockchain", "bitcoin", "crypto ledger", "distributed ledger"],
+            "response": (
+                "Blockchain is a digital record book that stores information in connected blocks.\n"
+                "1. Each block contains a group of records or transactions.\n"
+                "2. When one block is filled, it links to the previous block, forming a chain.\n"
+                "3. Copies of the record can be stored on many computers, so it is hard to change secretly.\n"
+                "4. This helps people keep records that are transparent and secure.\n"
+                "5. Blockchain is used in cryptocurrencies, tracking goods, and storing verified records.\n\n"
+                "Summary: blockchain is a secure chain of digital records shared across many computers.\n"
+                "Practice: Why is it difficult to secretly change information in a blockchain?"
+            ),
+        },
+        "internet": {
+            "keywords": ["internet", "www", "world wide web", "website", "web browser"],
+            "response": (
+                "The internet is a huge network that connects computers around the world.\n"
+                "1. It allows devices to send and receive information.\n"
+                "2. Websites, emails, videos, and online games all use the internet.\n"
+                "3. A browser helps you open websites on the web.\n"
+                "4. Data travels in small packets from one place to another.\n\n"
+                "Summary: the internet helps people and devices share information globally.\n"
+                "Practice: Name two things you can do using the internet."
+            ),
+        },
+        "computer": {
+            "keywords": ["computer", "cpu", "keyboard", "monitor", "hardware", "software"],
+            "response": (
+                "A computer is an electronic machine that takes input, processes it, and gives output.\n"
+                "1. Input devices include keyboard and mouse.\n"
+                "2. The CPU processes instructions.\n"
+                "3. Memory stores data while work is being done.\n"
+                "4. Output devices include monitor and printer.\n"
+                "5. Software tells the computer what to do.\n\n"
+                "Summary: a computer follows instructions to solve tasks and show results.\n"
+                "Practice: What is the job of the CPU in a computer?"
+            ),
+        },
+        "dsa": {
+            "keywords": ["dsa", "data structures", "algorithms", "array", "linked list", "stack", "queue"],
+            "response": (
+                "DSA means Data Structures and Algorithms.\n"
+                "1. Data structures are ways to organize data, like arrays, stacks, queues, trees, and graphs.\n"
+                "2. Algorithms are step-by-step methods used to solve problems.\n"
+                "3. We study DSA to write programs that are faster, cleaner, and easier to improve.\n"
+                "4. For example, searching for a name in a phone list can be done in smarter ways using algorithms.\n"
+                "5. DSA is important for coding interviews and strong programming skills.\n\n"
+                "Summary: DSA helps us store data well and solve problems efficiently.\n"
+                "Practice: Can you name one data structure and one algorithm?"
+            ),
+        },
+        "osmosis": {
+            "keywords": ["osmosis", "selectively permeable membrane", "water movement"],
+            "response": (
+                "Osmosis is the movement of water through a semipermeable membrane from a region with more water to a region with less water.\n"
+                "1. Water moves to balance the concentration on both sides.\n"
+                "2. The membrane allows water to pass but blocks some dissolved substances.\n"
+                "3. In plants, osmosis helps roots absorb water from the soil.\n"
+                "4. In cells, it helps maintain the right amount of water.\n\n"
+                "Summary: osmosis is how water moves across a membrane to balance concentration.\n"
+                "Practice: Why do plant roots need osmosis?"
+            ),
+        },
+        "volcano": {
+            "keywords": ["volcano", "magma", "lava", "eruption"],
+            "response": (
+                "A volcano is an opening in the Earth's crust through which hot melted rock, gases, and ash can come out.\n"
+                "1. Hot melted rock inside the Earth is called magma.\n"
+                "2. When magma reaches the surface, it is called lava.\n"
+                "3. Pressure builds inside the Earth and can cause an eruption.\n"
+                "4. Volcanoes can form mountains and change the land around them.\n\n"
+                "Summary: volcanoes release magma, ash, and gases from inside the Earth.\n"
+                "Practice: What is the difference between magma and lava?"
+            ),
+        },
+    }
+
+    padded_message = f" {message_lower} "
+    for topic in topic_map.values():
+        if any(keyword in padded_message or keyword in message_lower for keyword in topic["keywords"]):
+            return topic["response"]
+
+    if any(word in message_lower for word in ["math", "गणित", "கணிதம்", "గణితం", "calculate", "addition", "subtraction", "multiplication", "division", "algebra", "geometry"]):
+        return (
+            "Math becomes easier when we break it into steps.\n"
+            "1. Identify what is given.\n"
+            "2. Identify what you must find.\n"
+            "3. Choose the correct operation or formula.\n"
+            "4. Solve carefully and check the answer.\n\n"
+            "Send the exact question, and I will work it out step by step."
+        )
+
+    if any(word in message_lower for word in ["science", "विज्ञान", "அறிவியல்", "సైన్స్", "physics", "chemistry", "biology", "experiment", "reaction"]):
+        return (
+            "Science explains how the world works through observation and evidence.\n"
+            "1. Observe what happens.\n"
+            "2. Ask why it happens.\n"
+            "3. Test ideas with experiments or examples.\n"
+            "4. Use the result to build understanding.\n\n"
+            "Tell me the exact topic, such as force, atoms, digestion, or electricity."
+        )
+
+    clean_topic = _normalize_topic_label(normalized_message)[:80]
+    topic_title = clean_topic[0].upper() + clean_topic[1:] if clean_topic else "This topic"
+    return _build_generic_offline_response(clean_topic, topic_title, message_lower)
 
 
 def _step_by_step_prompt(language: str) -> str:
@@ -882,14 +1183,21 @@ def _provider_order(requested: Optional[str]) -> List[str]:
         return alias_map.get(name, name)
 
     if requested:
-        order.append(_normalize(requested))
+        normalized_requested = _normalize(requested)
+        if normalized_requested == "offline":
+            return []
+        if normalized_requested != "auto":
+            order.append(normalized_requested)
     else:
         env_default = (os.getenv("DEFAULT_MODEL_PROVIDER") or "").strip().lower()
-        if env_default:
-            order.append(_normalize(env_default))
+        normalized_default = _normalize(env_default) if env_default else ""
+        if normalized_default in all_providers and _provider_available(normalized_default):
+            order.append(normalized_default)
 
-    # Keep preferred provider first, then fall back to others.
-    order.extend(all_providers)
+    available_first = [provider for provider in all_providers if _provider_available(provider)]
+    unavailable_after = [provider for provider in all_providers if provider not in available_first]
+    order.extend(available_first)
+    order.extend(unavailable_after)
 
     deduped: List[str] = []
     for provider in order:
@@ -1031,24 +1339,55 @@ async def get_free_api_response(message: str) -> Optional[str]:
     2) Wikipedia REST summary API (no key)
     """
     query = (message or "").strip()
+    query = re.sub(r"\bunsuper\s*vised\b", "unsupervised", query, flags=re.IGNORECASE)
+    query = re.sub(r"\bsuper\s*vised\b", "supervised", query, flags=re.IGNORECASE)
+    query = re.sub(r"\breinforce\s*ment\b", "reinforcement", query, flags=re.IGNORECASE)
     if not query:
+        return None
+    normalized_query = query.lower().strip(" ?.")
+    if normalized_query in {
+        "ai",
+        "what is ai",
+        "define ai",
+        "explain ai",
+        "artificial intelligence",
+        "what is artificial intelligence",
+        "dsa",
+        "what is dsa",
+        "define dsa",
+        "explain dsa",
+        "data structures and algorithms",
+        "what is data structures and algorithms",
+    }:
         return None
 
     timeout = httpx.Timeout(8.0)
     headers = {"User-Agent": "ai-teacher-assistant/1.0"}
 
+    lookup_topic = _extract_learning_topic(query)
+    lookup_topic = re.sub(r"\bfor class\s+\d+\b", "", lookup_topic, flags=re.IGNORECASE)
+    lookup_topic = re.sub(r"\bclass\s+\d+\b", "", lookup_topic, flags=re.IGNORECASE)
+    lookup_topic = re.sub(r"\bfor students\b", "", lookup_topic, flags=re.IGNORECASE)
+    lookup_topic = re.sub(r"\bstep by step\b", "", lookup_topic, flags=re.IGNORECASE)
+    lookup_topic = re.sub(r"\s+", " ", lookup_topic).strip(" ?.,-")
+
     # 1) DuckDuckGo Instant Answer API
     try:
-        ddg_url = f"https://api.duckduckgo.com/?q={quote(query)}&format=json&no_html=1&skip_disambig=1"
+        ddg_queries = [query]
+        if lookup_topic and lookup_topic.lower() != query.lower():
+            ddg_queries.insert(0, lookup_topic)
+
         async with httpx.AsyncClient(timeout=timeout, headers=headers) as http:
-            ddg_resp = await http.get(ddg_url)
-            if ddg_resp.status_code == 200:
+            for ddg_query in ddg_queries:
+                ddg_url = f"https://api.duckduckgo.com/?q={quote(ddg_query)}&format=json&no_html=1&skip_disambig=1"
+                ddg_resp = await http.get(ddg_url)
+                if ddg_resp.status_code != 200:
+                    continue
                 ddg_data = ddg_resp.json()
                 abstract = (ddg_data.get("AbstractText") or "").strip()
                 if abstract:
                     return abstract
 
-                # Some results appear in RelatedTopics as short definitions
                 related = ddg_data.get("RelatedTopics") or []
                 if isinstance(related, list):
                     for item in related:
@@ -1061,39 +1400,233 @@ async def get_free_api_response(message: str) -> Optional[str]:
 
     # 2) Wikipedia Summary API
     try:
-        # Extract likely topic from "what is X", "define X", etc.
-        normalized = query.lower()
-        topic = query
-        patterns = [
-            r"^\s*what is\s+(.+?)\s*\??\s*$",
-            r"^\s*who is\s+(.+?)\s*\??\s*$",
-            r"^\s*define\s+(.+?)\s*$",
-            r"^\s*explain\s+(.+?)\s*$",
-        ]
-        for pattern in patterns:
-            match = re.match(pattern, normalized)
-            if match:
-                # Slice from original query to preserve capitalization
-                raw_group = match.group(1)
-                start_idx = normalized.find(raw_group)
-                if start_idx >= 0:
-                    topic = query[start_idx:start_idx + len(raw_group)]
-                break
-
-        topic = topic.strip(" ?.")
+        topic = (lookup_topic or query).strip(" ?.")
         if topic:
-            wiki_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(topic)}"
             async with httpx.AsyncClient(timeout=timeout, headers=headers) as http:
+                wiki_targets = [topic]
+                wiki_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(topic)}"
                 wiki_resp = await http.get(wiki_url)
                 if wiki_resp.status_code == 200:
                     wiki_data = wiki_resp.json()
                     extract = (wiki_data.get("extract") or "").strip()
                     if extract:
                         return extract
+
+                search_url = "https://en.wikipedia.org/w/api.php"
+                search_params = {
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": topic,
+                    "format": "json",
+                    "utf8": 1,
+                    "srlimit": 1,
+                }
+                search_resp = await http.get(search_url, params=search_params)
+                if search_resp.status_code == 200:
+                    search_data = search_resp.json()
+                    search_hits = (((search_data.get("query") or {}).get("search")) or [])
+                    if search_hits and isinstance(search_hits[0], dict):
+                        title = (search_hits[0].get("title") or "").strip()
+                        if title and title not in wiki_targets:
+                            wiki_targets.append(title)
+
+                for target in wiki_targets[1:]:
+                    summary_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(target)}"
+                    summary_resp = await http.get(summary_url)
+                    if summary_resp.status_code != 200:
+                        continue
+                    summary_data = summary_resp.json()
+                    extract = (summary_data.get("extract") or "").strip()
+                    if extract:
+                        return extract
     except Exception:
         pass
 
     return None
+
+
+OFFLINE_TOPIC_ALIASES: Dict[str, List[str]] = {
+    "photosynthesis": ["photosynthesis", "chlorophyll", "plant food"],
+    "quantum": ["quantum", "atom", "electron", "uncertainty"],
+    "heart": ["heart", "circulation", "blood flow", "cardiac"],
+    "dna": ["dna", "gene", "genes", "double helix", "genetics"],
+    "newton": ["newton", "force", "motion", "laws of motion", "gravity"],
+    "python": ["python", "programming", "loops", "functions", "coding"],
+}
+
+
+OFFLINE_NOTES: Dict[str, List[str]] = {
+    "photosynthesis": [
+        "Process: Light energy becomes chemical energy.",
+        "Equation: 6CO2 + 6H2O -> C6H12O6 + 6O2.",
+        "Location: Chloroplasts contain chlorophyll.",
+        "Main stages: Light reaction and Calvin cycle.",
+        "Importance: Makes food and releases oxygen.",
+    ],
+    "quantum": [
+        "Matter can behave like both particles and waves.",
+        "Superposition means multiple possible states can exist together.",
+        "Entanglement links particles in surprising ways.",
+        "The uncertainty principle limits exact measurement.",
+        "Applications include lasers, MRI, and quantum computing.",
+    ],
+    "heart": [
+        "The heart has four chambers.",
+        "Blood moves body -> right heart -> lungs -> left heart -> body.",
+        "Valves keep blood flowing in one direction.",
+        "The SA node helps control heartbeat rhythm.",
+        "The heart works like a strong muscular pump.",
+    ],
+    "dna": [
+        "DNA stores genetic instructions.",
+        "Its shape is a double helix.",
+        "Base pairs are A-T and G-C.",
+        "Genes are sections of DNA.",
+        "DNA passes traits from parents to children.",
+    ],
+    "newton": [
+        "First law explains inertia.",
+        "Second law is F = ma.",
+        "Third law says every action has an equal and opposite reaction.",
+        "These laws explain motion in sports, vehicles, and rockets.",
+        "Force changes how objects move.",
+    ],
+    "python": [
+        "Python uses clean, readable syntax.",
+        "It is beginner-friendly and widely used.",
+        "Variables, loops, and functions are core basics.",
+        "Python is common in web, data, and automation work.",
+        "Indentation is important in Python code.",
+    ],
+}
+
+
+def _extract_learning_topic(message: str) -> str:
+    cleaned_message = re.sub(r"\s+", " ", (message or "").strip(" ?."))
+    patterns = [
+        r"^(?:what is|what are|define|explain|teach me|tell me about)\s+(.+)$",
+        r"^(?:how does|how do|how can)\s+(.+)$",
+        r"^(?:solve|calculate|find)\s+(.+)$",
+    ]
+    lowered = cleaned_message.lower()
+    for pattern in patterns:
+        match = re.match(pattern, lowered)
+        if match:
+            extracted = match.group(1).strip()
+            if extracted:
+                return extracted
+    return cleaned_message or "this topic"
+
+
+def _detect_offline_topic(message: str) -> Optional[str]:
+    lowered = (message or "").lower()
+    for topic, aliases in OFFLINE_TOPIC_ALIASES.items():
+        if topic in lowered or any(alias in lowered for alias in aliases):
+            return topic
+    return None
+
+
+def _format_offline_notes(topic: Optional[str]) -> str:
+    if not topic:
+        return ""
+    notes = OFFLINE_NOTES.get(topic) or []
+    if not notes:
+        return ""
+    lines = "\n".join(f"- {note}" for note in notes[:5])
+    return f"Quick Notes:\n{lines}"
+
+
+def _format_generic_notes(message: str) -> str:
+    topic = _extract_learning_topic(message)
+    return (
+        "Quick Notes:\n"
+        f"- Topic: {topic.capitalize()}.\n"
+        "- Meaning: Start with the main definition in simple words.\n"
+        "- Key points: Identify the rules, parts, formula, or process.\n"
+        "- Real life use: Connect it to one practical example.\n"
+        "- Revision: End with one short self-check question."
+    )
+
+
+def _format_offline_diagram(topic: Optional[str]) -> str:
+    if not topic:
+        return ""
+    spec = DIAGRAM_SPECS.get(topic)
+    if not spec:
+        return ""
+    labels = spec.get("chart", {}).get("labels") or []
+    label_flow = " -> ".join(labels[:5]) if labels else "Key steps"
+    explanation = spec.get("explanation") or "Diagram overview unavailable."
+    return (
+        "Simple Diagram:\n"
+        f"{label_flow}\n"
+        f"Diagram idea: {explanation}"
+    )
+
+
+def _format_generic_diagram(message: str) -> str:
+    topic = _extract_learning_topic(message)
+    return (
+        "Simple Diagram:\n"
+        f"Definition -> Key Parts -> Example -> Practice\n"
+        f"Diagram idea: Show {topic} as a simple flow from meaning to use."
+    )
+
+
+def _build_video_query(message: str, topic: Optional[str]) -> str:
+    extracted_topic = _extract_learning_topic(message)
+    if topic and topic not in extracted_topic.lower():
+        base_query = f"{extracted_topic} {topic}"
+    else:
+        base_query = extracted_topic
+    return f"{base_query} explained for students"
+
+
+async def _format_offline_videos(message: str, topic: Optional[str]) -> str:
+    query = _build_video_query(message, topic)
+    videos = await _search_invidious(query, limit=3)
+    if videos:
+        lines = []
+        for index, video in enumerate(videos[:3], start=1):
+            title = video.get("title") or "Untitled"
+            channel = video.get("channel") or "Unknown Channel"
+            url = video.get("url") or ""
+            lines.append(f"{index}. {title} - {channel} - {url}")
+        return "Best YouTube Videos:\n" + "\n".join(lines)
+
+    fallback_url = f"https://www.youtube.com/results?search_query={quote(query + ' tutorial')}"
+    return (
+        "Best YouTube Videos:\n"
+        f"No live ranked results right now. Open this free search: {fallback_url}"
+    )
+
+
+async def _build_offline_learning_pack(message: str) -> str:
+    topic = _detect_offline_topic(message)
+    sections = [
+        _format_offline_notes(topic) or _format_generic_notes(message),
+        _format_offline_diagram(topic) or _format_generic_diagram(message),
+        await _format_offline_videos(message, topic),
+    ]
+    sections = [section for section in sections if section]
+    return "\n\n".join(sections)
+
+
+def _provider_reply_usable(reply: str) -> bool:
+    cleaned = (reply or "").strip()
+    if len(cleaned) < 20:
+        return False
+    lowered = cleaned.lower()
+    failure_markers = [
+        "i can't answer",
+        "i cannot answer",
+        "i do not know",
+        "i'm not sure",
+        "i am not sure",
+        "unable to answer",
+        "no information available",
+    ]
+    return not any(marker in lowered for marker in failure_markers)
 
 
 def _normalize_text(text: str) -> str:
@@ -1208,6 +1741,15 @@ def _rank_video(title: str, channel: str, seconds: int, views: int) -> float:
     return score
 
 
+def _query_relevance_score(query: str, title: str, channel: str) -> float:
+    query_tokens = set(_tokenize(query))
+    if not query_tokens:
+        return 0.0
+    combined_tokens = set(_tokenize(f"{title} {channel}"))
+    overlap = len(query_tokens.intersection(combined_tokens))
+    return float(overlap) * 1.5
+
+
 async def _search_invidious(query: str, limit: int = 8) -> List[Dict[str, Any]]:
     timeout = httpx.Timeout(8.0)
     headers = {"User-Agent": "ai-teacher-assistant/1.0"}
@@ -1257,7 +1799,7 @@ async def _search_invidious(query: str, limit: int = 8) -> List[Dict[str, Any]]:
                         "views": views,
                         "url": f"https://www.youtube.com/watch?v={video_id}",
                         "thumbnail": f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg",
-                        "score": _rank_video(title, channel, seconds, views),
+                        "score": _rank_video(title, channel, seconds, views) + _query_relevance_score(query, title, channel),
                         "source": "invidious",
                     }
                 )
@@ -1399,30 +1941,42 @@ async def chat_with_teacher(request: ChatRequest):
             )
     
     requested_provider = (request.model_provider or "").strip().lower()
+    if requested_provider == "offline":
+        free_api_reply = await get_free_api_response(request.message)
+        ai_reply = free_api_reply or await get_ai_response(request.message, request.language)
+        if context_text:
+            ai_reply = f"{ai_reply}\n\nFrom your notes:\n{context_text[:1200]}"
+        return ChatResponse(
+            reply=ai_reply,
+            language=request.language,
+            explanation="",
+            suggestions=[
+                "Switch to Auto to try configured AI providers",
+                "Ask about math or science",
+                "Open the Notes tab for notes",
+                "Open the Videos tab for YouTube results",
+                "Upload notes for context"
+            ],
+            student_id=request.student_id
+        )
+
     provider_candidates = _provider_order(requested_provider)
     configured_providers = [p for p in provider_candidates if _provider_available(p)]
 
     if not configured_providers:
         free_api_reply = await get_free_api_response(request.message)
         ai_reply = free_api_reply or await get_ai_response(request.message, request.language)
-        explanation = "Using offline response mode. Configure an API key for AI-powered responses."
-        if free_api_reply:
-            explanation = "Using free public API response mode (DuckDuckGo/Wikipedia)."
-        if openai_disabled_reason:
-            explanation = f"Using offline mode: {openai_disabled_reason}"
-        if request.step_by_step:
-            ai_reply = f"Step-by-step explanation:\n1. {ai_reply}"
         if context_text:
             ai_reply = f"{ai_reply}\n\nFrom your notes:\n{context_text[:1200]}"
         return ChatResponse(
             reply=ai_reply,
             language=request.language,
-            explanation=explanation,
+            explanation="",
             suggestions=[
-                "Set up OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, or HUGGINGFACE_API_KEY in .env",
-                "Or run a local Ollama model and set OLLAMA_MODEL",
-                "Try voice features",
-                "Ask about math or science",
+                "Ask another question on the same topic",
+                "Open the Notes tab for notes",
+                "Open the Videos tab for YouTube results",
+                "Upload notes for context",
                 "Request practice papers"
             ],
             student_id=request.student_id
@@ -1451,10 +2005,10 @@ async def chat_with_teacher(request: ChatRequest):
             model_name = request.model_name or _default_model(candidate)
             try:
                 ai_reply = await _invoke_provider(candidate, model_name, system_prompt, request.message)
-                if ai_reply:
+                if _provider_reply_usable(ai_reply):
                     provider = candidate
                     break
-                provider_errors.append(f"{candidate}: empty response")
+                provider_errors.append(f"{candidate}: empty or low-confidence response")
             except Exception as provider_error:
                 provider_error_text = str(provider_error)
                 provider_errors.append(f"{candidate}: {provider_error_text}")
@@ -1479,11 +2033,7 @@ async def chat_with_teacher(request: ChatRequest):
         return ChatResponse(
             reply=ai_reply,
             language=request.language,
-            explanation=(
-                f"AI-generated response via {provider}."
-                if provider != "offline"
-                else "All configured providers are unavailable right now. Using offline mode."
-            ),
+            explanation="",
             suggestions=suggestions,
             student_id=request.student_id
         )
@@ -1494,12 +2044,8 @@ async def chat_with_teacher(request: ChatRequest):
         _log_ai_error(f"chat fallback error: {error_text}")
         free_api_reply = await get_free_api_response(request.message)
         ai_reply = free_api_reply or await get_ai_response(request.message, request.language)
-        if request.step_by_step:
-            ai_reply = f"Step-by-step explanation:\n{ai_reply}"
         if context_text:
             ai_reply = f"{ai_reply}\n\nFrom your notes:\n{context_text[:1200]}"
-
-        explanation = f"{provider} request failed. Using offline mode."
         suggestions = [
             "Try again later",
             "Use voice features",
@@ -1534,7 +2080,7 @@ async def chat_with_teacher(request: ChatRequest):
         return ChatResponse(
             reply=ai_reply,
             language=request.language,
-            explanation=explanation,
+            explanation="",
             suggestions=suggestions,
             student_id=request.student_id
         )
