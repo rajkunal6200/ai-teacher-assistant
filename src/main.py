@@ -1170,7 +1170,7 @@ def _step_by_step_prompt(language: str) -> str:
 
 
 def _provider_order(requested: Optional[str]) -> List[str]:
-    all_providers = ["openai", "gemini", "deepseek", "huggingface", "ollama"]
+    all_providers = ["openai", "gemini", "deepseek", "ollama", "huggingface"]
     order: List[str] = []
 
     alias_map = {
@@ -1216,6 +1216,11 @@ def _provider_available(provider: str) -> bool:
     if provider == "huggingface":
         return bool(huggingface_api_key)
     if provider == "ollama":
+        # Check reachability dynamically if it was not detected at startup
+        # to support cases where Ollama is started after the backend
+        global ollama_available
+        if not ollama_available:
+            ollama_available = _is_ollama_reachable()
         return ollama_available
     return False
 
@@ -1985,9 +1990,9 @@ async def chat_with_teacher(request: ChatRequest):
     try:
         # System prompt based on language and subject
         system_prompts = {
-            "english": "You are a helpful AI teacher for Indian students. Explain concepts clearly with examples. Be encouraging and patient.",
-            "hindi": "आप भारतीय छात्रों के लिए एक सहायक AI शिक्षक हैं। उदाहरणों के साथ अवधारणाओं को स्पष्ट रूप से समझाएं। प्रोत्साहित करें और धैर्य रखें।",
-            "tamil": "நீங்கள் இந்திய மாணவர்களுக்கான உதவிகரமான AI ஆசிரியர். எடுத்துக்காட்டுகளுடன் கருத்துகளை தெளிவாக விளக்குங்கள். ஊக்குவிக்கும் மற்றும் பொறுமையாக இருங்கள்."
+            "english": "You are a helpful AI teacher for Indian students. Always provide answers in a highly structured format with clear spacing: 1) A clear Definition, 2) Key Points using bullet points with double spacing between them, and 3) Real-world Examples. Do not use blocks of text; keep each point separate and easy to read.",
+            "hindi": "आप भारतीय छात्रों के लिए एक सहायक AI शिक्षक हैं। हमेशा स्पष्ट अंतराल (spacing) के साथ एक अत्यधिक संरचित प्रारूप में उत्तर प्रदान करें: 1) एक स्पष्ट परिभाषा (Definition), 2) उनके बीच डबल स्पेसिंग के साथ बुलेट पॉइंट्स का उपयोग करते हुए मुख्य बिंदु (Key Points), और 3) वास्तविक दुनिया के उदाहरण (Examples)। पाठ के बड़े ब्लॉक (blocks) का उपयोग न करें; प्रत्येक बिंदु को अलग और पढ़ने में आसान रखें।",
+            "tamil": "நீங்கள் இந்திய மாணவர்களுக்கான உதவிகரமான AI ஆசிரியர். எப்போதும் தெளிவான இடைவெளியுடன் கூடிய கட்டமைக்கப்பட்ட வடிவத்தில் பதில்களை வழங்கவும்: 1) ஒரு தெளிவான வரையறை (Definition), 2) அவற்றுக்கிடையே இரட்டை இடைவெளியுடன் கூடிய புல்லட் புள்ளிகளைப் பயன்படுத்தும் முக்கிய குறிப்புகள் (Key Points), மற்றும் 3) நிஜ உலக உதாரணங்கள் (Examples). உரையின் தொகுதிகளைப் பயன்படுத்த வேண்டாம்; ஒவ்வொரு புள்ளியையும் தனித்தனியாகவும் படிக்க எளிதாகவும் வைத்திருங்கள்."
         }
 
         system_prompt = system_prompts.get(request.language, system_prompts["english"])
@@ -2018,6 +2023,20 @@ async def chat_with_teacher(request: ChatRequest):
                         openai_disabled_reason = "quota exceeded"
                     elif "invalid_api_key" in provider_error_text or "401" in provider_error_text:
                         openai_disabled_reason = "invalid API key"
+
+        if not ai_reply:
+            # Final attempt: Ollama fallback if not already tried in the loop
+            # This ensures that even if it wasn't in configured_providers initially,
+            # we try it before falling back to rule-based offline mode.
+            if "ollama" not in configured_providers:
+                try:
+                    if _provider_available("ollama"):
+                        model_name = request.model_name or _default_model("ollama")
+                        ai_reply = await _invoke_provider("ollama", model_name, system_prompt, request.message)
+                        if _provider_reply_usable(ai_reply):
+                            provider = "ollama"
+                except Exception as ollama_err:
+                    _log_ai_error(f"Ollama fallback attempt failed: {ollama_err}")
 
         if not ai_reply:
             ai_reply = await get_ai_response(request.message, request.language)
