@@ -1,0 +1,8 @@
+#!/bin/sh
+'''exec' "/Users/kunalraj/Desktop/Desktop - kunal’s MacBook Air/Ai teacher assistant/venv/bin/python" "$0" "$@"
+' '''
+import sys
+from distro.distro import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())

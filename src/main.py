@@ -522,7 +522,7 @@ async def home():
             "Speech-to-text & Text-to-speech",
             "School/College registration system",
             "Multi-language support (7 Indian languages)",
-            "Assignment and practice papers",
+            "Assignments and study practice",
             "Quiz system with hints",
             "Progress tracking"
         ],
@@ -537,7 +537,6 @@ async def home():
             "voice_chat": "POST /voice-chat",
             "video_recommendations": "GET /video-recommendations?query=photosynthesis",
             "assignments": "GET /assignments/{class_grade}",
-            "practice-papers": "GET /practice-papers",
             "quiz": "GET /quiz/{subject}",
             "hint": "GET /hint/{question_id}",
             "student": "GET /students/{student_id}",
@@ -773,6 +772,172 @@ async def get_ai_response(message: str, language: str = "english"):
     """
     Offline helper that gives structured educational responses when no live provider is available.
     """
+    message_lower = (message or "").lower()
+    
+    # 1. Handle JSON/array/outline formatting requests in offline fallback
+    if "json" in message_lower or "array" in message_lower:
+        topic_match = re.search(r"about\s+([^.\n]+)", message, re.IGNORECASE) or \
+                      re.search(r"topic\s+([^.\n]+)", message, re.IGNORECASE) or \
+                      re.search(r"for\s+([^.\n]+)", message, re.IGNORECASE)
+        topic = topic_match.group(1).strip(" '\"`{}[]") if topic_match else "General Science"
+        topic_title = topic.title()
+        
+        # 1.a Flashcards
+        if "flashcard" in message_lower:
+            return json.dumps([
+                {
+                    "front": f"What is the main definition of {topic_title}?",
+                    "back": f"The core scientific study or process involving {topic_title} in educational contexts."
+                },
+                {
+                    "front": f"Key component of {topic_title}",
+                    "back": f"An essential element required for {topic_title} to function or exist properly."
+                },
+                {
+                    "front": f"Primary application of {topic_title}",
+                    "back": f"Where and how {topic_title} is observed, applied, or utilized in the real world."
+                },
+                {
+                    "front": f"Why is {topic_title} important?",
+                    "back": "It provides fundamental structure, energy, or logical clarity to the system."
+                }
+            ])
+            
+        # 1.b Quiz
+        elif "quiz" in message_lower or "multiple choice" in message_lower:
+            return json.dumps([
+                {
+                    "question": f"Which of the following best defines {topic_title}?",
+                    "options": [
+                        f"A fundamental system or process representing {topic_title}.",
+                        "A chemical compound used as a catalyst.",
+                        "An auxiliary source of light waves.",
+                        "A mechanical unit for gravitational force."
+                    ],
+                    "answer": f"A fundamental system or process representing {topic_title}.",
+                    "explanation": f"{topic_title} is historically and practically defined as a core concept or process."
+                },
+                {
+                    "question": f"Where is {topic_title} primarily observed or studied?",
+                    "options": [
+                        "In outer space vacuums only.",
+                        "Under ocean hydrothermal vents.",
+                        "In schools, labs, and natural ecosystems.",
+                        "Only in micro-electronic devices."
+                    ],
+                    "answer": "In schools, labs, and natural ecosystems.",
+                    "explanation": f"As a general learning concept, {topic_title} is analyzed in nature and science classrooms."
+                },
+                {
+                    "question": f"What is an essential component required for {topic_title}?",
+                    "options": [
+                        "A liquid nitrogen cooling chamber.",
+                        "Proper inputs, structure, or energy sources.",
+                        "An advanced quantum computer chip.",
+                        "A helium gas enclosure."
+                    ],
+                    "answer": "Proper inputs, structure, or energy sources.",
+                    "explanation": f"Most natural or logical systems like {topic_title} depend on essential energy or structured inputs."
+                },
+                {
+                    "question": f"Which of the following is a classic example of {topic_title} in action?",
+                    "options": [
+                        f"Standard systems demonstrating {topic_title}.",
+                        "A copper coil conducting heat.",
+                        "A simple iron nail rusting in water.",
+                        "An inert neon bulb glowing."
+                    ],
+                    "answer": f"Standard systems demonstrating {topic_title}.",
+                    "explanation": f"A textbook demonstration provides the perfect practical model for {topic_title}."
+                },
+                {
+                    "question": f"Why is {topic_title} crucial to understand?",
+                    "options": [
+                        "It has no practical importance.",
+                        "It explains vital principles of science or logic.",
+                        "It is required to operate a basic vehicle.",
+                        "It is a prerequisite for writing binary code."
+                    ],
+                    "answer": "It explains vital principles of science or logic.",
+                    "explanation": f"Understanding {topic_title} opens paths to advanced scientific and analytical disciplines."
+                }
+            ])
+            
+        # 1.c Assignments
+        elif "assignment" in message_lower:
+            return json.dumps({
+                "assignments": [
+                    {
+                        "title": f"Mastering {topic_title} - Part 1",
+                        "subject": "General Studies",
+                        "class_grade": "All Classes",
+                        "due_date": "Next Monday",
+                        "total_marks": 50,
+                        "description": f"Write a comprehensive 300-word essay detailing the definition, key stages, and direct impacts of {topic_title}."
+                    },
+                    {
+                        "title": f"Practical Models of {topic_title}",
+                        "subject": "Lab Session",
+                        "class_grade": "All Classes",
+                        "due_date": "Next Friday",
+                        "total_marks": 30,
+                        "description": f"Identify a real-life scenario or textbook experiment demonstrating {topic_title} and sketch a clean diagram."
+                    },
+                    {
+                        "title": f"Comparing {topic_title} and Allied Concepts",
+                        "subject": "Research Task",
+                        "class_grade": "All Classes",
+                        "due_date": "In two weeks",
+                        "total_marks": 20,
+                        "description": f"Compare {topic_title} with another relevant concept in a structured tabular format showing 3 key differences."
+                    }
+                ]
+            })
+            
+        # 1.d Practice Papers
+        elif "paper" in message_lower:
+            return json.dumps({
+                "papers": [
+                    {
+                        "title": f"{topic_title} Comprehensive Practice Paper",
+                        "subject": "General Exam",
+                        "year": "2026",
+                        "time_limit": 60,
+                        "description": f"A full-length mock paper covering definition, core concepts, and multiple-choice questions about {topic_title}."
+                    },
+                    {
+                        "title": f"{topic_title} Advanced Conceptual Exam",
+                        "subject": "Advanced Science",
+                        "year": "2026",
+                        "time_limit": 120,
+                        "description": f"Deeper theoretical test focusing on advanced applications, formulas, and structural processes of {topic_title}."
+                    }
+                ]
+            })
+
+    # 2. Handle Mind Maps (markdown outline format) in offline fallback
+    if "mind map" in message_lower or "mindmap" in message_lower:
+        topic_match = re.search(r"concept:\s*\"([^\"]+)\"", message, re.IGNORECASE) or \
+                      re.search(r"concept\s+([^.\n]+)", message, re.IGNORECASE) or \
+                      re.search(r"for\s+([^.\n]+)", message, re.IGNORECASE)
+        topic = topic_match.group(1).strip(" '\"`{}[]") if topic_match else "Science Topic"
+        topic_title = topic.title()
+        return (
+            f"* {topic_title}\n"
+            f"  * Core Definition\n"
+            f"    * Primary meaning of {topic_title}\n"
+            f"    * Fundamental components and scope\n"
+            f"  * Essential Requirements\n"
+            f"    * Primary input parameters\n"
+            f"    * Required environmental conditions\n"
+            f"  * Key Subtopics & Branches\n"
+            f"    * Primary sub-systems\n"
+            f"    * Secondary attributes\n"
+            f"  * Real-world Applications\n"
+            f"    * Daily life examples\n"
+            f"    * Advanced technological usecases"
+        )
+
     def _normalize_common_topic_variants(text: str) -> str:
         normalized = (text or "")
         replacements = [
@@ -1322,7 +1487,7 @@ async def _invoke_provider(provider: str, model_name: str, system_prompt: str, u
             "stream": False,
             "options": {"temperature": 0.7}
         }
-        async with httpx.AsyncClient(timeout=httpx.Timeout(45.0)) as http:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as http:
             response = await http.post(endpoint, json=payload)
         if response.status_code >= 400:
             raise RuntimeError(f"Ollama HTTP {response.status_code}: {response.text[:200]}")
@@ -1366,7 +1531,7 @@ async def get_free_api_response(message: str) -> Optional[str]:
     }:
         return None
 
-    timeout = httpx.Timeout(8.0)
+    timeout = httpx.Timeout(2.0)
     headers = {"User-Agent": "ai-teacher-assistant/1.0"}
 
     lookup_topic = _extract_learning_topic(query)
@@ -1981,18 +2146,20 @@ async def chat_with_teacher(request: ChatRequest):
                 "Ask another question on the same topic",
                 "Open the Notes tab for notes",
                 "Open the Videos tab for YouTube results",
-                "Upload notes for context",
-                "Request practice papers"
+                "Upload notes for context"
             ],
             student_id=request.student_id
         )
 
     try:
-        # System prompt based on language and subject
         system_prompts = {
-            "english": "You are a helpful AI teacher for Indian students. Always provide answers in a highly structured format with clear spacing: 1) A clear Definition, 2) Key Points using bullet points with double spacing between them, and 3) Real-world Examples. Do not use blocks of text; keep each point separate and easy to read.",
-            "hindi": "आप भारतीय छात्रों के लिए एक सहायक AI शिक्षक हैं। हमेशा स्पष्ट अंतराल (spacing) के साथ एक अत्यधिक संरचित प्रारूप में उत्तर प्रदान करें: 1) एक स्पष्ट परिभाषा (Definition), 2) उनके बीच डबल स्पेसिंग के साथ बुलेट पॉइंट्स का उपयोग करते हुए मुख्य बिंदु (Key Points), और 3) वास्तविक दुनिया के उदाहरण (Examples)। पाठ के बड़े ब्लॉक (blocks) का उपयोग न करें; प्रत्येक बिंदु को अलग और पढ़ने में आसान रखें।",
-            "tamil": "நீங்கள் இந்திய மாணவர்களுக்கான உதவிகரமான AI ஆசிரியர். எப்போதும் தெளிவான இடைவெளியுடன் கூடிய கட்டமைக்கப்பட்ட வடிவத்தில் பதில்களை வழங்கவும்: 1) ஒரு தெளிவான வரையறை (Definition), 2) அவற்றுக்கிடையே இரட்டை இடைவெளியுடன் கூடிய புல்லட் புள்ளிகளைப் பயன்படுத்தும் முக்கிய குறிப்புகள் (Key Points), மற்றும் 3) நிஜ உலக உதாரணங்கள் (Examples). உரையின் தொகுதிகளைப் பயன்படுத்த வேண்டாம்; ஒவ்வொரு புள்ளியையும் தனித்தனியாகவும் படிக்க எளிதாகவும் வைத்திருங்கள்."
+            "english": "You are a helpful AI teacher for Indian students. Always provide answers in a pointwise format. Do not use blocks of text. There MUST be an empty line (blank line space) between every single point or bullet point. Structure your answer with: 1) A clear Definition, 2) Key Points using bullet points, and 3) Real-world Examples.",
+            "hindi": "आप भारतीय छात्रों के लिए एक सहायक AI शिक्षक हैं। हमेशा बिंदुवार (pointwise) प्रारूप में उत्तर प्रदान करें। पाठ के बड़े ब्लॉक का उपयोग न करें। हर बिंदु या बुलेट पॉइंट के बीच एक खाली लाइन का स्थान (empty line space) होना अनिवार्य है। अपने उत्तर को इस प्रकार व्यवस्थित करें: 1) एक स्पष्ट परिभाषा, 2) बुलेट पॉइंट्स का उपयोग करते हुए मुख्य बिंदु, और 3) वास्तविक दुनिया के उदाहरण।",
+            "tamil": "நீங்கள் இந்திய மாணவர்களுக்கான உதவிகரமான AI ஆசிரியர். எப்போதும் புள்ளிவாரியாக (pointwise) பதில்களை வழங்கவும். உரையின் பெரிய தொகுதிகளைப் பயன்படுத்த வேண்டாம். ஒவ்வொரு புள்ளி அல்லது புல்லட் புள்ளிக்கும் இடையே ஒரு வெற்று வரி இடைவெளி (empty line space) இருக்க வேண்டும். உங்கள் பதிலை இவ்வாறு கட்டமைக்கவும்: 1) ஒரு தெளிவான வரையறை, 2) புல்லட் புள்ளிகளைப் பயன்படுத்தும் முக்கிய குறிப்புகள், மற்றும் 3) நிஜ உலக உதாரணங்கள்.",
+            "telugu": "మీరు భారతీయ విద్యార్థుల కోసం సహాయక AI ఉపాధ్యాయులు. ఎల్లప్పుడూ పాయింట్ల వారీగా (pointwise) సమాధానాలను అందించండి. టెక్స్ట్ యొక్క పెద్ద బ్లాక్‌లను ఉపయోగించవద్దు. ప్రతి పాయింట్ లేదా బుల్లెట్ పాయింట్ మధ్య ఖచ్చితంగా ఒక ఖాళీ లైన్ స్థలం (empty line space) ఉండాలి. మీ సమాధానాన్ని ఇలా రూపొందించండి: 1) స్పష్టమైన నిర్వచనం, 2) బుల్లెట్ పాయింట్లను ఉపయోగించే ముఖ్యమైన అంశాలు, మరియు 3) నిజ-ప్రపంచ ఉదాహరణలు.",
+            "marathi": "तुम्ही भारतीय विद्यार्थ्यांसाठी मदत करणारे AI शिक्षक आहात. नेहमी मुद्द्यांच्या स्वरूपात (pointwise) उत्तरे द्या. मजकुराचे मोठे ब्लॉक वापरू नका. प्रत्येक मुद्दा किंवा बुलेट पॉईंटच्या दरम्यान एक रिकामी ओळ (empty line space) असणे अनिवार्य आहे. तुमचे उत्तर खालीलप्रमाणे व्यवस्थित करा: १) स्पष्ट व्याख्या, २) बुलेट पॉइंट्स वापरून मुख्य मुद्दे, आणि ३) वास्तविक जगातील उदाहरणे.",
+            "gujarati": "તમે ભારતીય વિદ્યાર્થીઓ માટે સહાયક AI શિક્ષક છો. હંમેશા મુદ્દાસર (pointwise) જવાબો આપો. લખાણના મોટા બ્લોક્સનો ઉપયોગ કરશો નહીં. દરેક મુદ્દા કે બુલેટ પોઇન્ટની વચ્ચે એક ખાલી લાઇન (empty line space) હોવી અનિવાર્ય છે. તમારા જવાબને આ રીતે ગોઠવો: ૧) સ્પષ્ટ વ્યાખ્યા, ૨) બુલેટ પોઇન્ટ્સનો ઉપયોગ કરીને મુખ્ય મુદ્દાઓ, અને ૩) વાસ્તવિક દુનિયાના ઉદાહરણો.",
+            "bengali": "আপনি ভারতীয় ছাত্রদের জন্য একজন সহায়ক AI শিক্ষক। সর্বদা পয়েন্ট আকারে (pointwise) উত্তর প্রদান করুন। টেক্সটের বড় ব্লক ব্যবহার করবেন না। প্রতিটি পয়েন্ট বা বুলেট পয়েন্টের মধ্যে অবশ্যই একটি খালি লাইন (empty line space) থাকতে হবে। আপনার উত্তরটি এইভাবে সাজান: ১) একটি স্পষ্ট সংজ্ঞা, ২) বুলেট পয়েন্ট ব্যবহার করে মূল পয়েন্টগুলি, এবং ৩) বাস্তব জগতের উদাহরণ।"
         }
 
         system_prompt = system_prompts.get(request.language, system_prompts["english"])
@@ -2239,10 +2406,21 @@ SAMPLE_ASSIGNMENTS = [
     }
 ]
 
+def _normalize_class_grade(value: str) -> str:
+    normalized = (value or "").strip().lower()
+    normalized = normalized.replace('class ', '').replace('st year', 'th').replace('nd year', 'th').replace('rd year', 'th').replace('th year', 'th')
+    normalized = normalized.replace(' ', '')
+    if normalized.endswith('th'):
+        return normalized
+    if normalized.isdigit():
+        return f"{normalized}th"
+    return normalized
+
 @app.get("/assignments/{class_grade}")
 async def get_assignments(class_grade: str, subject: Optional[str] = None):
     """Get assignments for a specific class"""
-    assignments = [a for a in SAMPLE_ASSIGNMENTS if a["class_grade"] == class_grade]
+    normalized_class = _normalize_class_grade(class_grade)
+    assignments = [a for a in SAMPLE_ASSIGNMENTS if _normalize_class_grade(a["class_grade"]) == normalized_class]
     
     if subject:
         assignments = [a for a in assignments if a["subject"] == subject.lower()]
@@ -2253,78 +2431,354 @@ async def get_assignments(class_grade: str, subject: Optional[str] = None):
         "assignments": assignments
     }
 
-# ========== PRACTICE PAPERS SYSTEM ==========
-SAMPLE_PRACTICE_PAPERS = [
-    {
-        "paper_id": "CBSE2024",
-        "title": "CBSE 10th Math 2024",
-        "subject": "math",
-        "year": "2024",
-        "pdf_url": "/papers/cbse_math_2024.pdf",
-        "solutions_url": "/solutions/cbse_math_2024_sol.pdf",
-        "time_limit": 180
-    },
-    {
-        "paper_id": "CBSE2023",
-        "title": "CBSE 10th Science 2023",
-        "subject": "science",
-        "year": "2023",
-        "pdf_url": "/papers/cbse_science_2023.pdf",
-        "solutions_url": "/solutions/cbse_science_2023_sol.pdf",
-        "time_limit": 180
-    },
-    {
-        "paper_id": "ICSE2024",
-        "title": "ICSE 9th English 2024",
-        "subject": "english",
-        "year": "2024",
-        "pdf_url": "/papers/icse_english_2024.pdf",
-        "solutions_url": None,
-        "time_limit": 120
-    },
-    {
-        "paper_id": "JEE2024",
-        "title": "JEE Main 2024 Physics",
-        "subject": "physics",
-        "year": "2024",
-        "pdf_url": "/papers/jee_physics_2024.pdf",
-        "solutions_url": "/solutions/jee_physics_2024_sol.pdf",
-        "time_limit": 180
-    }
-]
-
-@app.get("/practice-papers")
-async def get_practice_papers(subject: Optional[str] = None, year: Optional[str] = None):
-    """Get practice papers"""
-    papers = SAMPLE_PRACTICE_PAPERS
-    
-    if subject:
-        papers = [p for p in papers if p["subject"] == subject.lower()]
-    if year:
-        papers = [p for p in papers if p["year"] == year]
-    
-    return {
-        "total_papers": len(papers),
-        "papers": papers
-    }
 
 
-@app.get("/diagram-spec")
-async def get_diagram_spec(topic: str):
+
+class DiagramGenerateRequest(BaseModel):
+    topic: str
+    model_provider: Optional[str] = "auto"
+    model_name: Optional[str] = None
+
+
+@app.post("/generate-diagram")
+async def generate_scientific_diagram(request: DiagramGenerateRequest):
     """
-    Return 2D/3D diagram spec for a topic.
+    Generate custom interactive scientific SVG diagram + coordinates using AI,
+    or fallback to prebuilt local key mappings for instant offline reliability.
     """
-    key = (topic or "").strip().lower()
-    if not key:
+    topic = request.topic.strip()
+    if not topic:
         raise HTTPException(status_code=400, detail="Topic is required")
-    spec = DIAGRAM_SPECS.get(key)
-    if not spec:
+
+    lower_topic = topic.lower()
+    
+    # Offline Local Fallback Mapping
+    fallback_key = None
+    if "photosynthesis" in lower_topic:
+        fallback_key = "photosynthesis"
+    elif "quantum" in lower_topic:
+        fallback_key = "quantum"
+    elif "heart" in lower_topic:
+        fallback_key = "heart"
+    elif "dna" in lower_topic or "helix" in lower_topic:
+        fallback_key = "dna"
+    elif "newton" in lower_topic or "second law" in lower_topic:
+        fallback_key = "newton"
+    elif "atom" in lower_topic or "electron" in lower_topic or "orbital" in lower_topic or "nucleus" in lower_topic:
+        fallback_key = "atom"
+    elif "water" in lower_topic or "rain" in lower_topic or "cycle" in lower_topic or "evaporat" in lower_topic:
+        fallback_key = "water"
+    elif "cell" in lower_topic or "organelle" in lower_topic:
+        fallback_key = "cell"
+    elif "volcano" in lower_topic or "magma" in lower_topic or "lava" in lower_topic:
+        fallback_key = "volcano"
+    elif "mitosis" in lower_topic or "division" in lower_topic or "split" in lower_topic:
+        fallback_key = "mitosis"
+
+    system_prompt = (
+        "You are an expert scientific diagram designer.\n"
+        "Your task is to generate a beautifully structured, modern, and detailed scientific vector diagram in SVG format based on the user's topic.\n"
+        "Return the output strictly as a valid JSON object. Do NOT wrap the JSON in markdown code blocks like ```json ... ```. Output ONLY the raw JSON string.\n"
+        "The JSON MUST have the following structure:\n"
+        "{\n"
+        "  \"title\": \"Capitalized Topic Name\",\n"
+        "  \"desc\": \"Detailed scientific explanation. It MUST be in pointwise format with exactly one empty line (blank space) between every single point or bullet point.\",\n"
+        "  \"svg\": \"A beautiful, valid, fully-formed SVG string (wrapped in <svg viewBox=\\\"0 0 400 320\\\" xmlns=\\\"http://www.w3.org/2000/svg\\\" id=\\\"dynamicSvg\\\">). Use modern space-themed colors (e.g. background circle fill rgba(99,102,241,0.03) with filter blur, glassmorphic strokes, and glowing highlights). Draw detailed shapes, paths, lines, and layers instead of a simple square or circle.\",\n"
+        "  \"coords\": [\n"
+        "    {\"name\": \"1. Part Name\", \"cx\": integer_x, \"cy\": integer_y, \"r\": 8, \"info\": \"Details about what this part does\"},\n"
+        "    {\"name\": \"2. Part Name\", \"cx\": integer_x, \"cy\": integer_y, \"r\": 8, \"info\": \"Details about what this part does\"},\n"
+        "    {\"name\": \"3. Part Name\", \"cx\": integer_x, \"cy\": integer_y, \"r\": 8, \"info\": \"Details about what this part does\"},\n"
+        "    {\"name\": \"4. Part Name\", \"cx\": integer_x, \"cy\": integer_y, \"r\": 8, \"info\": \"Details about what this part does\"}\n"
+        "  ]\n"
+        "}\n\n"
+        "Make sure the coordinates (cx, cy) correspond exactly to the coordinate elements drawn inside your generated SVG string so they display in correct layers!"
+    )
+
+    requested_provider = (request.model_provider or "").strip().lower()
+    provider_candidates = _provider_order(requested_provider)
+    configured_providers = [p for p in provider_candidates if _provider_available(p)]
+
+    ai_reply = ""
+    if configured_providers:
+        for candidate in configured_providers:
+            model_name = request.model_name or _default_model(candidate)
+            try:
+                # Custom direct client call to ensure high token length generation (2000 tokens)
+                if candidate == "openai" and client is not None:
+                    completion = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Generate a diagram for the topic: {topic}"}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000
+                    )
+                    ai_reply = completion.choices[0].message.content or ""
+                    
+                elif candidate == "gemini" and gemini_client is not None:
+                    prompt = f"{system_prompt}\n\nUser: Generate a diagram for the topic: {topic}"
+                    if gemini_client_type == "new":
+                        result = gemini_client.models.generate_content(
+                            model=model_name,
+                            contents=prompt
+                        )
+                        ai_reply = getattr(result, "text", None) or ""
+                    else:
+                        model = gemini_client.GenerativeModel(model_name)
+                        result = model.generate_content(prompt)
+                        ai_reply = getattr(result, "text", None) or ""
+                        
+                elif candidate == "deepseek" and deepseek_client is not None:
+                    completion = deepseek_client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Generate a diagram for the topic: {topic}"}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000
+                    )
+                    ai_reply = completion.choices[0].message.content or ""
+                    
+                elif candidate == "ollama":
+                    endpoint = f"{ollama_base_url}/api/chat"
+                    payload = {
+                        "model": model_name,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Generate a diagram for the topic: {topic}"}
+                        ],
+                        "stream": False,
+                        "options": {"temperature": 0.7, "num_predict": 2048}
+                    }
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as http:
+                        response = await http.post(endpoint, json=payload)
+                    if response.status_code == 200:
+                        data = response.json()
+                        message = data.get("message") or {}
+                        ai_reply = (message.get("content") or "").strip()
+                
+                if ai_reply:
+                    break
+            except Exception as e:
+                _log_ai_error(f"Generate diagram provider error ({candidate}): {e}")
+
+    # Clean and parse response if generated by AI
+    if ai_reply:
+        try:
+            clean_reply = ai_reply.strip()
+            if clean_reply.startswith("```json"):
+                clean_reply = clean_reply[7:]
+            if clean_reply.startswith("```"):
+                clean_reply = clean_reply[3:]
+            if clean_reply.endswith("```"):
+                clean_reply = clean_reply[:-3]
+            clean_reply = clean_reply.strip()
+            
+            parsed_data = json.loads(clean_reply)
+            # Verify parsed data has required keys
+            if "title" in parsed_data and "svg" in parsed_data:
+                return parsed_data
+        except Exception as parse_err:
+            _log_ai_error(f"Failed to parse generated scientific diagram JSON: {parse_err}")
+
+    # Fallback to local keys if AI is unavailable, failed, or offline
+    if fallback_key:
         return {
-            "topic": key,
-            "available_topics": sorted(DIAGRAM_SPECS.keys()),
-            "message": "No diagram spec found for this topic.",
+            "fallback_key": fallback_key,
+            "title": topic.title(),
+            "desc": f"Displaying prebuilt local model for {topic.title()}.",
+            "svg": "",
+            "coords": []
         }
-    return spec
+
+    # Absolute fallback: generic diagram structure
+    return {
+        "title": topic.title(),
+        "desc": f"Definition of {topic}.\n\nCore process stages.\n\nAllied scientific components.\n\nReal-world applications.",
+        "svg": f"""
+        <svg class="svg-diagram" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" id="dynamicSvg">
+          <circle cx="200" cy="160" r="100" fill="rgba(99, 102, 241, 0.03)" filter="blur(25px)"></circle>
+          <line x1="200" y1="160" x2="200" y2="70" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4"></line>
+          <line x1="200" y1="160" x2="200" y2="250" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4"></line>
+          <line x1="200" y1="160" x2="90" y2="160" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4"></line>
+          <line x1="200" y1="160" x2="310" y2="160" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4"></line>
+          <circle cx="200" cy="160" r="32" fill="rgba(217, 70, 239, 0.15)" stroke="var(--accent)" stroke-width="3" filter="drop-shadow(0 0 12px var(--accent-glow))"></circle>
+          <text x="200" y="163" fill="#fff" font-size="8" font-weight="900" text-anchor="middle">{topic.upper()[:10]}</text>
+        </svg>
+        """,
+        "coords": [
+            {"name": "1. Definition", "cx": 200, "cy": 70, "r": 8, "info": f"Core identity and scientific explanation for {topic}."},
+            {"name": "2. Process Mechanics", "cx": 310, "cy": 160, "r": 8, "info": f"Mechanical stages and action details for {topic}."},
+            {"name": "3. Allied Concepts", "cx": 200, "cy": 250, "r": 8, "info": f"Governing physical laws or related topics matching {topic}."},
+            {"name": "4. Real-world Uses", "cx": 90, "cy": 160, "r": 8, "info": f"Practical applications or natural systems demonstrating {topic}."}
+        ]
+    }
+
+
+class NotesGenerateRequest(BaseModel):
+    topic: str
+    model_provider: Optional[str] = "auto"
+    model_name: Optional[str] = None
+
+
+@app.post("/generate-notes")
+async def generate_notes_and_flashcards(request: NotesGenerateRequest):
+    """
+    Generate custom study notes and interactive flashcards using AI,
+    or fallback to prebuilt local templates matching standard keys.
+    """
+    topic = request.topic.strip()
+    if not topic:
+        raise HTTPException(status_code=400, detail="Topic is required")
+
+    lower_topic = topic.lower()
+    
+    # Offline Local Fallback Mapping
+    fallback_key = None
+    if "photosynthesis" in lower_topic:
+        fallback_key = "photosynthesis"
+    elif "quantum" in lower_topic:
+        fallback_key = "quantum"
+    elif "heart" in lower_topic:
+        fallback_key = "heart"
+    elif "dna" in lower_topic or "helix" in lower_topic:
+        fallback_key = "dna"
+
+    system_prompt = (
+        "You are an expert educational content creator.\n"
+        "Your task is to generate highly informative, beautifully structured study notes and matching flashcards based on the user's topic.\n"
+        "Return the output strictly as a valid JSON object. Do NOT wrap the JSON in markdown code blocks like ```json ... ```. Output ONLY the raw JSON string.\n"
+        "The JSON MUST have the following structure:\n"
+        "{\n"
+        "  \"title\": \"Capitalized Topic Name Notes\",\n"
+        "  \"content\": \"<h3>🌿 Subtitle matching the topic</h3><p>Detailed explanation...</p><b>Key Concepts:</b><ul><li><b>Term 1:</b> Explanation...</li><li><b>Term 2:</b> Explanation...</li></ul>\",\n"
+        "  \"flashcards\": [\n"
+        "    {\"front\": \"Question 1?\", \"back\": \"Clear, concise answer matching the question.\"},\n"
+        "    {\"front\": \"Question 2?\", \"back\": \"Clear, concise answer matching the question.\"},\n"
+        "    {\"front\": \"Question 3?\", \"back\": \"Clear, concise answer matching the question.\"},\n"
+        "    {\"front\": \"Question 4?\", \"back\": \"Clear, concise answer matching the question.\"}\n"
+        "  ]\n"
+        "}\n"
+    )
+
+    requested_provider = (request.model_provider or "").strip().lower()
+    provider_candidates = _provider_order(requested_provider)
+    configured_providers = [p for p in provider_candidates if _provider_available(p)]
+
+    ai_reply = ""
+    if configured_providers:
+        for candidate in configured_providers:
+            model_name = request.model_name or _default_model(candidate)
+            try:
+                if candidate == "openai" and client is not None:
+                    completion = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Generate study notes and flashcards for the topic: {topic}"}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000
+                    )
+                    ai_reply = completion.choices[0].message.content or ""
+                    
+                elif candidate == "gemini" and gemini_client is not None:
+                    prompt = f"{system_prompt}\n\nUser: Generate study notes and flashcards for the topic: {topic}"
+                    if gemini_client_type == "new":
+                        result = gemini_client.models.generate_content(
+                            model=model_name,
+                            contents=prompt
+                        )
+                        ai_reply = getattr(result, "text", None) or ""
+                    else:
+                        model = gemini_client.GenerativeModel(model_name)
+                        result = model.generate_content(prompt)
+                        ai_reply = getattr(result, "text", None) or ""
+                        
+                elif candidate == "deepseek" and deepseek_client is not None:
+                    completion = deepseek_client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Generate study notes and flashcards for the topic: {topic}"}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000
+                    )
+                    ai_reply = completion.choices[0].message.content or ""
+                    
+                elif candidate == "ollama":
+                    endpoint = f"{ollama_base_url}/api/chat"
+                    payload = {
+                        "model": model_name,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Generate study notes and flashcards for the topic: {topic}"}
+                        ],
+                        "stream": False,
+                        "options": {"temperature": 0.7, "num_predict": 2048}
+                    }
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as http:
+                        response = await http.post(endpoint, json=payload)
+                    if response.status_code == 200:
+                        data = response.json()
+                        message = data.get("message") or {}
+                        ai_reply = (message.get("content") or "").strip()
+                
+                if ai_reply:
+                    break
+            except Exception as e:
+                _log_ai_error(f"Generate notes provider error ({candidate}): {e}")
+
+    # Clean and parse response if generated by AI
+    if ai_reply:
+        try:
+            clean_reply = ai_reply.strip()
+            if clean_reply.startswith("```json"):
+                clean_reply = clean_reply[7:]
+            if clean_reply.startswith("```"):
+                clean_reply = clean_reply[3:]
+            if clean_reply.endswith("```"):
+                clean_reply = clean_reply[:-3]
+            clean_reply = clean_reply.strip()
+            
+            parsed_data = json.loads(clean_reply)
+            if "title" in parsed_data and "content" in parsed_data and "flashcards" in parsed_data:
+                return parsed_data
+        except Exception as parse_err:
+            _log_ai_error(f"Failed to parse generated notes JSON: {parse_err}")
+
+    # Fallback to local keys if AI is unavailable, failed, or offline
+    if fallback_key:
+        return {
+            "fallback_key": fallback_key,
+            "title": topic.title() + " Notes",
+            "content": "",
+            "flashcards": []
+        }
+
+    # Absolute fallback: generic structured notes and flashcards
+    return {
+        "title": topic.title() + " Notes",
+        "content": f"""
+        <h3>📖 Overview of {topic.title()}</h3>
+        <p>{topic.title()} is a key topic in science and educational curricula.</p>
+        <p><b>Core Concepts:</b></p>
+        <ul>
+          <li><b>Concept Definition:</b> Fundamental definition and framework for {topic}.</li>
+          <li><b>Important Mechanics:</b> The primary mechanics, processes, or laws that govern {topic}.</li>
+          <li><b>Real-world Context:</b> Practical applications and daily life examples of {topic}.</li>
+        </ul>
+        """,
+        "flashcards": [
+            {"front": f"What is the definition of {topic}?", "back": f"A primary concept describing {topic} in an educational framework."},
+            {"front": f"What are the main sub-components of {topic}?", "back": "The core concepts, mechanics, and practical applications."},
+            {"front": f"Why is studying {topic} important?", "back": "It helps us analyze the natural laws and scientific frameworks governing the universe."}
+        ]
+    }
+
 
 # ========== DIAGRAM SPECS ==========
 DIAGRAM_SPECS = {
@@ -2587,6 +3041,104 @@ async def get_quiz(subject: str):
     }
 
 
+def _parse_ai_json(raw: str) -> Optional[dict]:
+    if not raw:
+        return None
+    clean_text = raw.strip()
+    if clean_text.startswith("```json"):
+        clean_text = clean_text[7:]
+    if clean_text.startswith("```"):
+        clean_text = clean_text[3:]
+    if clean_text.endswith("```"):
+        clean_text = clean_text[:-3]
+    clean_text = clean_text.strip()
+    try:
+        return json.loads(clean_text)
+    except Exception:
+        return None
+
+
+def _sanitize_quiz_questions(parsed: dict, subject: str) -> List[dict]:
+    questions = []
+    for index, item in enumerate(parsed.get("questions", []), start=1):
+        if not isinstance(item, dict):
+            continue
+        question_text = str(item.get("question", "")).strip()
+        options = item.get("options") or []
+        if not isinstance(options, list):
+            continue
+        options = [str(opt).strip() for opt in options if str(opt).strip()]
+        if not question_text or len(options) < 2:
+            continue
+        correct_answer = item.get("correct_answer", 0)
+        if isinstance(correct_answer, str) and correct_answer.isdigit():
+            correct_answer = int(correct_answer)
+        if not isinstance(correct_answer, int) or correct_answer < 0 or correct_answer >= len(options):
+            correct_answer = 0
+        questions.append({
+            "question_id": int(item.get("question_id", index)) if str(item.get("question_id", index)).isdigit() else index,
+            "question": question_text,
+            "options": options,
+            "correct_answer": correct_answer,
+            "hint": str(item.get("hint", "Think about the key concept behind this question.")).strip(),
+            "explanation": str(item.get("explanation", "")).strip()
+        })
+    return questions
+
+
+@app.get("/quiz/ai/{subject}")
+async def get_ai_quiz(subject: str):
+    """Generate AI-based quiz questions for a subject"""
+    topic = subject.strip() or "General Knowledge"
+    subject_lower = topic.lower()
+
+    provider_candidates = _provider_order(None)
+    configured_providers = [p for p in provider_candidates if _provider_available(p)]
+
+    ai_reply = ""
+    if configured_providers:
+        system_prompt = (
+            "You are an expert educational content creator. Generate a short AI-powered multiple-choice quiz for school students. "
+            "Output only valid JSON and do not wrap the response in markdown code fences. "
+            "The JSON MUST have keys: subject, total_questions, questions. "
+            "Each question must include: question_id, question, options, correct_answer, hint, explanation. "
+            "Use simple language and keep every option plausible. "
+        )
+        user_message = (
+            f"Generate 4 multiple-choice questions for the topic: {topic}. "
+            "Provide exactly 4 answer options per question. "
+            "Make the correct_answer a zero-based index. "
+            "Return the answer strictly as JSON."
+        )
+
+        for candidate in configured_providers:
+            model_name = _default_model(candidate)
+            try:
+                ai_reply = await _invoke_provider(candidate, model_name, system_prompt, user_message)
+                parsed = _parse_ai_json(ai_reply)
+                if parsed and isinstance(parsed, dict) and parsed.get("questions"):
+                    questions = _sanitize_quiz_questions(parsed, topic)
+                    if questions:
+                        return {
+                            "subject": topic,
+                            "total_questions": len(questions),
+                            "questions": questions,
+                            "source": "ai"
+                        }
+            except Exception as e:
+                _log_ai_error(f"AI quiz generation failed for {candidate}: {e}")
+
+    if subject_lower in SAMPLE_QUIZZES:
+        return {
+            "subject": topic,
+            "total_questions": len(SAMPLE_QUIZZES[subject_lower]),
+            "questions": SAMPLE_QUIZZES[subject_lower],
+            "source": "fallback"
+        }
+
+    raise HTTPException(status_code=503, detail="AI quiz generation is currently unavailable")
+
+
 class QuizSubmit(BaseModel):
     student_id: str
     subject: str
@@ -2762,16 +3314,16 @@ async def get_feedback_summary(limit: int = 20):
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting AI Teacher Assistant Server...")
-    print("📝 API Documentation: http://localhost:8003/docs")
-    print("🔍 Health Check: http://localhost:8003/health")
-    print("💬 Chat Endpoint: http://localhost:8003/chat")
-    print("🎤 Voice Features: http://localhost:8003/voice-to-text")
-    print("📚 Assignments: http://localhost:8003/assignments/10th")
-    print("📝 Quiz: http://localhost:8003/quiz/math")
+    print("📝 API Documentation: http://localhost:8000/docs")
+    print("🔍 Health Check: http://localhost:8000/health")
+    print("💬 Chat Endpoint: http://localhost:8000/chat")
+    print("🎤 Voice Features: http://localhost:8000/voice-to-text")
+    print("📚 Assignments: http://localhost:8000/assignments/10th")
+    print("📝 Quiz: http://localhost:8000/quiz/math")
     print("\n" + "="*50)
     print(f"OpenAI Status: {'✅ Configured' if client else '❌ Not Configured'}")
     if not client:
         print("💡 Tip: Create a .env file with OPENAI_API_KEY=your_key_here")
     print("="*50 + "\n")
     
-    uvicorn.run(app, host="0.0.0.0", port=8003, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

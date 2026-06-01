@@ -1,1698 +1,416 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Teacher Intelligence System</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0b14;--surface:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);--primary:#6366f1;--primary-glow:rgba(99,102,241,.3);--accent:#8b5cf6;--success:#10b981;--text:#f1f5f9;--muted:#64748b;--radius:16px}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,transform .6s;z-index:10}
-.screen.hidden{opacity:0;pointer-events:none;transform:scale(1.05)}
-#welcome{background:linear-gradient(135deg,#0a0b14 0%,#1e1b4b 50%,#0a0b14 100%);z-index:30}
-.welcome-badge{background:var(--primary);color:#fff;padding:8px 24px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
-.welcome-logo{font-size:80px;margin-bottom:24px;animation:float 3s ease-in-out infinite}
-.welcome-h1{font-size:clamp(28px,5vw,56px);font-weight:900;text-align:center;line-height:1.1;margin-bottom:12px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.welcome-sub{color:var(--muted);font-size:18px;text-align:center;max-width:500px;margin-bottom:48px;line-height:1.6}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-#register{background:var(--bg);z-index:20}
-.reg-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px;width:90%;max-width:480px;backdrop-filter:blur(20px)}
-.reg-card h2{font-size:24px;font-weight:800;margin-bottom:8px}
-.reg-card p{color:var(--muted);font-size:14px;margin-bottom:32px}
-.field{margin-bottom:20px}
-.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
-.field input,.field select{width:100%;padding:14px 16px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;outline:none;transition:.3s}
-.field input:focus,.field select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
-.field select option{background:#1e1b4b;color:#fff}
-.btn{padding:14px 32px;border:none;border-radius:99px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 8px 24px var(--primary-glow);transition:.3s;display:inline-flex;align-items:center;gap:8px;justify-content:center}
-.btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--primary-glow)}
-.btn-block{width:100%}
-.btn-outline{background:transparent;border:1px solid var(--border);box-shadow:none;color:var(--text)}
-.btn-outline:hover{border-color:var(--primary);background:rgba(99,102,241,.1);box-shadow:none}
-#app{position:fixed;inset:0;display:flex;z-index:10;opacity:0;pointer-events:none;transition:.6s}
-#app.visible{opacity:1;pointer-events:auto}
-.nav{width:72px;background:rgba(15,17,30,.9);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:8px;z-index:100}
-.nav-logo{font-size:24px;margin-bottom:24px}
-.nav-btn{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px;cursor:pointer;transition:.2s;border:none;background:transparent}
-.nav-btn:hover,.nav-btn.active{color:#fff;background:var(--primary);box-shadow:0 0 16px var(--primary-glow)}
-.nav-spacer{flex:1}
-.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{height:64px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(15,17,30,.5);backdrop-filter:blur(20px)}
-.topbar h2{font-size:18px;font-weight:700}
-.user-badge{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);padding:6px 16px 6px 12px;border-radius:99px;font-size:13px;font-weight:600}
-.user-dot{width:8px;height:8px;border-radius:50%;background:var(--success)}
-.panels{flex:1;display:flex;overflow:hidden}
-.module{flex:1;overflow-y:auto;padding:32px;scrollbar-width:thin}
-.module::-webkit-scrollbar{width:4px}
-.module::-webkit-scrollbar-thumb{background:var(--border);border-radius:9px}
-.pane{display:none;animation:fadeUp .4s ease}
-.pane.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:.3s}
-.card:hover{border-color:var(--primary);transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
-.card-icon{font-size:32px;margin-bottom:12px}
-.card-title{font-size:15px;font-weight:700;margin-bottom:4px}
-.card-sub{font-size:12px;color:var(--muted)}
-.kpi{font-size:28px;font-weight:900;color:var(--primary);margin:8px 0 4px}
-.section-title{font-size:20px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-.chat{width:380px;min-width:380px;border-left:1px solid var(--border);display:flex;flex-direction:column;background:rgba(15,17,30,.6);backdrop-filter:blur(20px)}
-.chat-header{padding:20px 24px;border-bottom:1px solid var(--border)}
-.chat-header h3{font-size:16px;font-weight:700}
-.chat-header small{color:var(--muted);font-size:11px}
-.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin}
-.msg{max-width:85%;padding:14px 18px;border-radius:16px;font-size:14px;line-height:1.6;animation:fadeUp .3s ease;white-space:pre-wrap}
-.msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px}
-.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-bottom-right-radius:4px}
-.chat-input{padding:16px;border-top:1px solid var(--border);display:flex;gap:10px}
-.chat-input input{flex:1;padding:12px 18px;background:var(--surface);border:1px solid var(--border);border-radius:99px;color:var(--text);font-size:14px;outline:none;transition:.3s}
-.chat-input input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
-.chat-input button{width:44px;height:44px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:16px;cursor:pointer;transition:.2s}
-.chat-input button:hover{transform:scale(1.1)}
-.topic-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-.topic-btn{padding:8px 16px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
-.topic-btn:hover,.topic-btn.active{color:#fff;background:var(--primary);border-color:var(--primary)}
-.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.tool-btn{padding:14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:.2s;text-align:center}
-.tool-btn:hover{border-color:var(--primary);background:rgba(99,102,241,.1)}
-@media print {
-  body * { visibility: hidden !important; }
-  #printableNotesArea, #printableNotesArea * { visibility: visible !important; color: #000 !important; }
-  #printableNotesArea { position: absolute; left: 0; top: 0; width: 100vw; background: #fff !important; padding: 40px; text-align: left; }
-  .nav, .topbar, .chat, input, button, .section-title, .screen, .hidden { display: none !important; }
-}
-.quiz-option {
-    display: block; width: 100%; padding: 16px 20px; margin-bottom: 12px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px;
-    text-align: left; cursor: pointer; transition: 0.2s;
-}
-.quiz-option:hover:not(:disabled) { border-color: var(--primary); background: rgba(99,102,241,0.05); }
-.quiz-option.correct { background: rgba(16, 185, 129, 0.1) !important; border-color: var(--success) !important; }
-.quiz-option.wrong { background: rgba(239, 68, 68, 0.1) !important; border-color: #ef4444 !important; }
-.quiz-option:disabled { cursor: default; }
-</style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Teacher Intelligence System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-<div id="printableQuizArea" style="display:none;"></div>
 
-<!-- TOOL MODAL OVERLAY -->
-<div id="toolModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:9999; justify-content:center; align-items:center; opacity:0; transition:opacity 0.3s;">
-    <div style="background:var(--bg); border:1px solid var(--border); border-radius:16px; width:90%; max-width:600px; box-shadow:0 20px 40px rgba(0,0,0,0.5); overflow:hidden; display:flex; flex-direction:column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); background:var(--surface);">
-            <div id="toolModalTitle" style="font-weight:600; font-size:18px; color:var(--text);">Tool</div>
-            <button onclick="closeTool()" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px;"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="toolModalContent" style="padding:20px; max-height:70vh; overflow-y:auto;">
-            <!-- Dynamic Tool Content -->
-        </div>
-    </div>
-</div>
-
-<!-- ===== SCREEN 1: WELCOME ===== -->
-<div class="screen" id="welcome">
-  <div class="welcome-badge">AI-Powered Education</div>
-  <div class="welcome-logo">🎓</div>
-  <h1 class="welcome-h1">AI Based Teacher<br>Intelligence System</h1>
-  <p class="welcome-sub">Your personal AI tutor — voice assistant, interactive diagrams, smart notes, and personalized learning paths.</p>
-  <button class="btn" onclick="showScreen('register')">🚀 Get Started</button>
-  <p style="color:var(--muted);font-size:12px;margin-top:16px">Powered by Advanced AI Models</p>
-</div>
-
-<!-- ===== SCREEN 2: REGISTRATION ===== -->
-<div class="screen hidden" id="register">
-  <div class="reg-card">
-    <h2>📝 Create Your Profile</h2>
-    <p>Tell us about yourself to personalize your learning experience.</p>
-    <div class="field"><label>Full Name *</label><input id="regName" placeholder="Enter your full name"></div>
-    <div class="field"><label>School / College *</label><input id="regSchool" placeholder="Enter school name"></div>
-    <div class="field"><label>Class *</label>
-      <select id="regClass">
-        <option value="">Select your class</option>
-        <option>Class 6</option><option>Class 7</option><option>Class 8</option>
-        <option>Class 9</option><option>Class 10</option><option>Class 11</option>
-        <option>Class 12</option><option>B.Tech 1st Year</option><option>B.Tech 2nd Year</option>
-        <option>B.Sc 1st Year</option><option>B.Sc 2nd Year</option><option>M.Sc</option>
-      </select>
-    </div>
-    <div class="field"><label>Mobile Number *</label><input id="regMobile" type="tel" placeholder="10-digit mobile number"></div>
-    <div class="field"><label>Email (Optional)</label><input id="regEmail" type="email" placeholder="your@email.com"></div>
-    <button class="btn btn-block" onclick="doRegister()">🎓 Complete Registration</button>
-    <button class="btn btn-outline btn-block" style="margin-top:10px" onclick="showScreen('welcome')">← Back</button>
+  <!-- ===== SCREEN 1: WELCOME ===== -->
+  <div class="screen" id="welcome">
+    <div class="welcome-badge">AI-Powered Education</div>
+    <div class="welcome-logo">🎓</div>
+    <h1 class="welcome-h1">AI Based Teacher<br>Intelligence System</h1>
+    <p class="welcome-sub">Your personal AI tutor — voice assistant, interactive diagrams, smart notes, and personalized learning paths.</p>
+    <button class="btn" onclick="showScreen('register')">🚀 Get Started <i class="fas fa-arrow-right"></i></button>
+    <p style="color:var(--muted);font-size:12px;margin-top:16px">Powered by Advanced AI Models</p>
   </div>
-</div>
 
-<!-- ===== SCREEN 3: MAIN APP ===== -->
-<div id="app">
-  <!-- Nav Rail -->
-  <nav class="nav">
-    <div class="nav-logo">🎓</div>
-    <button class="nav-btn active" onclick="switchPane('dashboard',this)" title="Dashboard"><i class="fas fa-th-large"></i></button>
-    <button class="nav-btn" onclick="switchPane('voice',this)" title="Voice"><i class="fas fa-microphone"></i></button>
-    <button class="nav-btn" onclick="switchPane('diagrams',this)" title="Diagrams"><i class="fas fa-project-diagram"></i></button>
-    <button class="nav-btn" onclick="switchPane('notes',this)" title="Notes"><i class="fas fa-sticky-note"></i></button>
-    <button class="nav-btn" onclick="switchPane('assignments',this)" title="Assignments"><i class="fas fa-tasks"></i></button>
-    <button class="nav-btn" onclick="switchPane('papers',this)" title="Papers"><i class="fas fa-file-alt"></i></button>
-    <button class="nav-btn" onclick="switchPane('tools',this)" title="Tools"><i class="fas fa-tools"></i></button>
-    <div class="nav-spacer"></div>
-    <button class="nav-btn" onclick="switchPane('settings',this)" title="Settings"><i class="fas fa-cog"></i></button>
-    <button class="nav-btn" onclick="doLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
-  </nav>
-
-  <div class="content">
-    <div class="topbar">
-      <h2>AI Teacher Intelligence System</h2>
-      <div class="user-badge"><div class="user-dot"></div><span id="topbarUser">Student</span></div>
-    </div>
-
-    <div class="panels">
-      <!-- MODULE AREA -->
-      <div class="module">
-        <!-- DASHBOARD -->
-        <div class="pane active" id="pane-dashboard">
-          <div class="section-title">📊 Dashboard</div>
-          <div class="grid">
-            <div class="card"><div class="card-icon">💬</div><div class="kpi" id="kpiChats">0</div><div class="card-sub">Questions Asked</div></div>
-            <div class="card"><div class="card-icon">🎯</div><div class="kpi" id="kpiClass">-</div><div class="card-sub">Your Class</div></div>
-            <div class="card"><div class="card-icon">📚</div><div class="kpi" id="kpiSubjects">All</div><div class="card-sub">Subjects</div></div>
-            <div class="card"><div class="card-icon">🤖</div><div class="kpi" id="kpiModel">Auto</div><div class="card-sub">AI Model</div></div>
-          </div>
-          <div class="section-title" style="margin-top:32px">⚡ Quick Actions</div>
-          <div class="grid">
-            <div class="card" style="cursor:pointer" onclick="switchPane('voice')"><div class="card-icon">🎤</div><div class="card-title">Voice Assistant</div><div class="card-sub">Ask questions by speaking</div></div>
-            <div class="card" style="cursor:pointer" onclick="switchPane('diagrams')"><div class="card-icon">📊</div><div class="card-title">Diagrams</div><div class="card-sub">Visual learning tools</div></div>
-            <div class="card" style="cursor:pointer" onclick="switchPane('notes')"><div class="card-icon">📝</div><div class="card-title">AI Notes</div><div class="card-sub">Auto-generated study notes</div></div>
-            <div class="card" style="cursor:pointer" onclick="switchPane('assignments')"><div class="card-icon">📋</div><div class="card-title">Assignments</div><div class="card-sub">Practice questions</div></div>
-          </div>
-        </div>
-
-        <!-- VOICE -->
-        <div class="pane" id="pane-voice">
-          <div class="section-title">🎤 Voice Assistant</div>
-          <div class="card" style="text-align:center;padding:48px">
-            <div style="font-size:64px;margin-bottom:16px">🎙️</div>
-            <p style="color:var(--muted);margin-bottom:24px">Click the microphone to start speaking</p>
-            <button class="btn" id="voiceBtn" onclick="toggleVoice()">Start Listening</button>
-            <p id="voiceStatus" style="color:var(--muted);font-size:13px;margin-top:16px"></p>
-          </div>
-        </div>
-
-        <!-- DIAGRAMS -->
-        <div class="pane" id="pane-diagrams">
-          <div class="section-title">📊 Interactive Diagrams</div>
-          <div style="margin-bottom: 24px; position: relative;">
-             <input id="diagramSearch" type="text" placeholder="Search for any diagram (e.g. Heart, Solar System, Brain...)" 
-                    style="width:100%; padding: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; color: var(--text); outline: none; transition: 0.3s;"
-                    onkeydown="if(event.key==='Enter')searchDiagram()">
-             <button onclick="searchDiagram()" style="position: absolute; right: 8px; top: 8px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;"><i class="fas fa-search"></i></button>
-          </div>
-          <div class="card" id="diagramContent">
-             <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">🔍</div>
-                <p style="color:var(--muted);">Search for any topic above to generate an interactive AI diagram.</p>
-             </div>
-          </div>
-        </div>
-
-        <!-- NOTES -->
-        <div class="pane" id="pane-notes">
-          <div class="section-title">📝 AI Study Notes</div>
-          <div style="margin-bottom: 24px; position: relative;">
-             <input id="notesSearch" type="text" placeholder="Search for any topic to generate notes (e.g. World War II, Calculus, Genetics...)" 
-                    style="width:100%; padding: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; color: var(--text); outline: none; transition: 0.3s;"
-                    onkeydown="if(event.key==='Enter')searchNotes()">
-             <button onclick="searchNotes()" style="position: absolute; right: 8px; top: 8px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;"><i class="fas fa-search"></i></button>
-          </div>
-          <div class="card" id="notesContent">
-             <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">🔍</div>
-                <p style="color:var(--muted);">Search for any topic above to generate bullet-point study notes.</p>
-             </div>
-          </div>
-        </div>
-
-        <!-- ASSIGNMENTS -->
-        <!-- ASSIGNMENTS -->
-        <div class="pane" id="pane-assignments">
-          <div class="section-title">📋 Active Assignments</div>
-          <div style="margin-bottom: 24px; position: relative;">
-             <input id="assignmentSearch" type="text" placeholder="Enter a topic to generate assignments (e.g. Newton's Laws, Genetics...)" 
-                    style="width:100%; padding: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; color: var(--text); outline: none; transition: 0.3s;"
-                    onkeydown="if(event.key==='Enter')generateAssignments()">
-             <button onclick="generateAssignments()" style="position: absolute; right: 8px; top: 8px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;"><i class="fas fa-plus"></i></button>
-          </div>
-          <div id="assignmentContent" class="grid" style="grid-template-columns:1fr">
-             <div style="text-align:center; padding: 40px; grid-column:1/-1;">
-                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📋</div>
-                <p style="color:var(--muted);">Tell me what you are learning, and I will generate custom assignments and quizzes for you.</p>
-             </div>
-          </div>
-        </div>
-
-        <!-- QUIZ ENGINE -->
-        <div class="pane" id="pane-quiz">
-          <div class="section-title">🎓 Interactive AI Quiz</div>
-          <div id="quizContainer" class="card" style="position:relative; min-height: 400px; padding: 30px;">
-             <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">🧠</div>
-                <p style="color:var(--muted);">Generate an assignment to start an interactive quiz.</p>
-             </div>
-          </div>
-        </div>
-
-        <!-- PAPERS -->
-        <div class="pane" id="pane-papers">
-          <div class="section-title">📄 Practice Papers</div>
-          <div style="margin-bottom: 24px; position: relative;">
-             <input id="paperSearch" type="text" placeholder="Enter a topic to generate a full practice paper (e.g. Physics, History)..." 
-                    style="width:100%; padding: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; color: var(--text); outline: none; transition: 0.3s;"
-                    onkeydown="if(event.key==='Enter')generatePapers()">
-             <button onclick="generatePapers()" style="position: absolute; right: 8px; top: 8px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;"><i class="fas fa-plus"></i></button>
-          </div>
-          <div id="paperContent" class="grid" style="grid-template-columns:1fr">
-             <div style="text-align:center; padding: 40px; color:var(--muted); grid-column: 1 / -1;">
-                Search for a topic to dynamically generate a full-length practice paper.
-             </div>
-          </div>
-        </div>
-
-        <!-- PAPER TEST ENGINE -->
-        <div class="pane" id="pane-paper-test">
-          <div class="section-title">📝 Practice Exam</div>
-          <div id="paperTestContainer" class="card" style="position:relative; min-height: 400px; padding: 30px;">
-             <!-- Dynamically injected UI -->
-          </div>
-        </div>
-
-        <!-- TOOLS -->
-        <div class="pane" id="pane-tools">
-          <div class="section-title">🛠️ Study Tools</div>
-          <div class="tools-grid">
-            <div class="tool-btn" onclick="openTool('notepad')">📝 Notepad</div>
-            <div class="tool-btn" onclick="openTool('calculator')">🧮 Calculator</div>
-            <div class="tool-btn" onclick="openTool('dictionary')">📖 Dictionary</div>
-            <div class="tool-btn" onclick="openTool('converter')">🔄 Converter</div>
-            <div class="tool-btn" onclick="openTool('timer')">⏱️ Timer</div>
-            <div class="tool-btn" onclick="openTool('planner')">📅 Planner</div>
-            <div class="tool-btn" onclick="openTool('flashcards')">🃏 Flashcards</div>
-            <div class="tool-btn" onclick="openTool('mindmap')">🗺️ Mind Map</div>
-          </div>
-          <div class="section-title" style="margin-top:32px">⚙️ System</div>
-          <div class="tools-grid">
-            <div class="tool-btn" onclick="clearChat()">🗑️ Clear Chat</div>
-            <div class="tool-btn" onclick="openTool('export')">📤 Export Data</div>
-            <div class="tool-btn" onclick="openTool('help')">❓ Help</div>
-          </div>
-        </div>
-
-        <!-- SETTINGS -->
-        <div class="pane" id="pane-settings">
-          <div class="section-title">⚙️ AI Settings</div>
-          <div class="card">
-            <div class="field"><label>Teaching Persona (Tone)</label>
-              <select id="toneSelect" onchange="saveModel()">
-                <option value="friendly">😊 Friendly Tutor (Default)</option>
-                <option value="socratic">🧐 Socratic Method (Guiding)</option>
-                <option value="strict">👨‍🏫 Strict Professor</option>
-                <option value="concise">⚡ Concise & Direct</option>
-              </select>
-            </div>
-            <div class="field"><label>Language Preference</label>
-              <select id="langSelect" onchange="saveModel()">
-                <option value="english">🇺🇸 English</option>
-                <option value="hindi">🇮🇳 Hindi</option>
-                <option value="spanish">🇪🇸 Spanish</option>
-                <option value="french">🇫🇷 French</option>
-                <option value="mandarin">🇨🇳 Mandarin</option>
-              </select>
-            </div>
-            <div class="field"><label>AI Model Provider</label>
-              <select id="modelSelect" onchange="saveModel()">
-                <option value="auto">⚙️ Auto (Recommended)</option>
-                <option value="openai">🤖 OpenAI</option>
-                <option value="gemini">🌀 Gemini</option>
-                <option value="deepseek">🧠 DeepSeek</option>
-                <option value="ollama">🦙 Ollama (Local)</option>
-              </select>
-            </div>
-            <div class="field"><label>Custom Model Name</label><input id="modelName" placeholder="e.g. gpt-4o, gemini-pro"></div>
-            <button class="btn" onclick="saveModel()" style="padding:10px 24px;font-size:13px">💾 Save Settings</button>
-          </div>
-        </div>
+  <!-- ===== SCREEN 2: REGISTRATION ===== -->
+  <div class="screen hidden" id="register">
+    <div class="reg-card">
+      <h2>📝 Create Your Profile</h2>
+      <p>Tell us about yourself to personalize your learning experience.</p>
+      <div class="field">
+        <label>Full Name *</label>
+        <input id="regName" placeholder="Enter your full name">
       </div>
-
-      <!-- CHAT PANEL -->
-      <div class="chat">
-        <div class="chat-header"><h3>💬 AI Assistant</h3><small>Ask me anything about your subjects</small></div>
-        <div class="messages" id="chatBox">
-          <div class="msg ai">👋 Hello! I'm your AI Teacher. Ask me anything to start learning!</div>
-        </div>
-        <div class="chat-input">
-          <input id="chatInput" placeholder="Type your question..." onkeydown="if(event.key==='Enter')sendChat()">
-          <button onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
-        </div>
+      <div class="field">
+        <label>School / College *</label>
+        <input id="regSchool" placeholder="Enter school name">
       </div>
+      <div class="field">
+        <label>Class *</label>
+        <select id="regClass" onchange="updateClassSuggestions()">
+          <option value="">Select your class</option>
+          <option>Class 6</option><option>Class 7</option><option>Class 8</option>
+          <option>Class 9</option><option>Class 10</option><option>Class 11</option>
+          <option>Class 12</option><option>B.Tech 1st Year</option><option>B.Tech 2nd Year</option>
+          <option>B.Sc 1st Year</option><option>B.Sc 2nd Year</option><option>M.Sc</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mobile Number *</label>
+        <input id="regMobile" type="tel" placeholder="10-digit mobile number">
+      </div>
+      <div class="field">
+        <label>Email (Optional)</label>
+        <input id="regEmail" type="email" placeholder="your@email.com">
+      </div>
+      <button class="btn btn-block" onclick="doRegister()">🎓 Complete Registration <i class="fas fa-check"></i></button>
+      <button class="btn btn-outline btn-block" style="margin-top:12px" onclick="showScreen('welcome')">← Back</button>
     </div>
   </div>
-</div>
 
-<script>
-let student=JSON.parse(localStorage.getItem('atis_student')||'null');
-let chatCount=parseInt(localStorage.getItem('atis_chats')||'0');
+  <!-- ===== SCREEN 3: MAIN APP ===== -->
+  <div id="app">
+    <!-- Nav Rail -->
+    <nav class="nav">
+      <div class="nav-logo" onclick="switchPane('dashboard', document.querySelector('.nav-btn'))">🎓</div>
+      <button class="nav-btn active" onclick="switchPane('dashboard',this)" title="Dashboard"><i class="fas fa-th-large"></i></button>
+      <button class="nav-btn" onclick="switchPane('voice',this)" title="Voice"><i class="fas fa-microphone"></i></button>
+      <button class="nav-btn" onclick="switchPane('diagrams',this)" title="Diagrams"><i class="fas fa-project-diagram"></i></button>
+      <button class="nav-btn" onclick="switchPane('notes',this)" title="Notes"><i class="fas fa-sticky-note"></i></button>
+      <button class="nav-btn" onclick="switchPane('assignments',this)" title="Assignments"><i class="fas fa-tasks"></i></button>
+      <button class="nav-btn" onclick="switchPane('tools',this)" title="Tools"><i class="fas fa-tools"></i></button>
+      <div class="nav-spacer"></div>
+      <button class="nav-btn" onclick="switchPane('settings',this)" title="Settings"><i class="fas fa-cog"></i></button>
+      <button class="nav-btn" onclick="doLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+    </nav>
 
-let selectedModel=localStorage.getItem('atis_model')||'auto';
-let selectedModelName=localStorage.getItem('atis_modelName')||'';
-let selectedTone=localStorage.getItem('atis_tone')||'friendly';
-let selectedLanguage=localStorage.getItem('atis_language')||'english';
-
-window.addEventListener('DOMContentLoaded', () => {
-    const toneS = document.getElementById('toneSelect');
-    const langS = document.getElementById('langSelect');
-    const modS = document.getElementById('modelSelect');
-    const modN = document.getElementById('modelName');
-    if(toneS) toneS.value = selectedTone;
-    if(langS) langS.value = selectedLanguage;
-    if(modS) modS.value = selectedModel;
-    if(modN) modN.value = selectedModelName;
-});
-const API_BASE=(()=>{const s=(localStorage.getItem('apiBaseUrl')||'').trim().replace(/\/$/,'');if(s)return s;if(['3000','8004','5173','5500'].includes(location.port)||location.protocol==='file:')return'http://'+(location.hostname||'127.0.0.1')+':8003';return location.origin})();
-
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));const t=document.getElementById(id);if(t)t.classList.remove('hidden')}
-
-function doRegister(){
-  const name=document.getElementById('regName').value.trim();
-  const school=document.getElementById('regSchool').value.trim();
-  const cls=document.getElementById('regClass').value;
-  const mobile=document.getElementById('regMobile').value.trim();
-  if(!name||!school||!cls||!mobile){alert('Please fill all required fields.');return}
-  if(mobile.length!==10){alert('Mobile number must be 10 digits.');return}
-  student={id:'STU'+Math.floor(Math.random()*90000+10000),name,school,class:cls,mobile,registered:Date.now()};
-  localStorage.setItem('atis_student',JSON.stringify(student));
-  enterApp();
-}
-
-function enterApp(){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-  document.getElementById('app').classList.add('visible');
-  document.getElementById('topbarUser').textContent=student.name+' • '+student.id;
-  document.getElementById('kpiClass').textContent=student.class;
-  document.getElementById('kpiChats').textContent=chatCount;
-}
-
-function doLogout(){
-  localStorage.removeItem('atis_student');
-  location.reload();
-}
-
-function switchPane(name,btn){
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
-  const t=document.getElementById('pane-'+name);if(t)t.classList.add('active');
-  if(btn){document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
-}
-
-function addMsg(text,type){const box=document.getElementById('chatBox');const div=document.createElement('div');div.className='msg '+type;div.innerHTML=text;box.appendChild(div);box.scrollTop=box.scrollHeight}
-
-async function sendChat(bypassIntercept = false){
-  const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;
-  input.value='';
-  
-  const lowerMsg = msg.toLowerCase();
-  
-  if (!bypassIntercept) {
-      // AI CHAT -> ASSIGNMENTS INTERCEPT
-      if (lowerMsg.includes('assignment') || lowerMsg.includes('quiz') || lowerMsg.includes('test me on')) {
-          const query = lowerMsg.replace(/give assignment on|give me an assignment on|give assignment|create assignment|test me on|quiz me on|for|of/gi, '').trim();
-      if (query.length > 2) {
-          addMsg(msg, 'user');
-          addMsg('📋 Generating customized assignments and quizzes for "' + query + '"... Redirecting you now.', 'ai');
-          setTimeout(() => {
-              switchPane('assignments');
-              generateAssignments(query);
-          }, 1200);
-          return;
-      }
-  }
-
-  // AI CHAT -> NOTES INTERCEPT
-  if (lowerMsg.includes('notes on') || lowerMsg.includes('notes about') || lowerMsg.includes('give notes')) {
-      const query = msg.replace(/give notes|create notes|notes on|notes about|for|of/gi, '').trim();
-      if (query.length > 2) {
-          addMsg(msg, 'user');
-          addMsg('📝 Generating detailed study notes for "' + query + '"... Redirecting you now.', 'ai');
-          setTimeout(() => {
-              switchPane('notes');
-              searchNotes(query);
-          }, 1200);
-          return;
-      }
-  }
-
-  // AI CHAT -> DIAGRAM INTERCEPT
-  if (lowerMsg.includes('diagram') || lowerMsg.includes('draw') || lowerMsg.includes('show me')) {
-      // Extract the topic
-      const query = msg.replace(/diagram|draw|show me|of|about/gi, '').trim();
-      if (query.length > 2) {
-          addMsg(msg, 'user');
-          addMsg('📊 Generating diagram for "' + query + '"... Redirecting you now.', 'ai');
-          setTimeout(() => {
-              switchPane('diagrams');
-              searchDiagram(query);
-          }, 1200);
-          return;
-      }
-  }
-  } // END OF if (!bypassIntercept) block
-
-  addMsg(msg,'user');chatCount++;localStorage.setItem('atis_chats',chatCount);
-  document.getElementById('kpiChats').textContent=chatCount;
-  try{
-    let finalMsg = msg;
-    if (selectedTone === 'strict') finalMsg = "[System Instruction: Respond in the tone of a strict, formal professor.]\n" + msg;
-    else if (selectedTone === 'socratic') finalMsg = "[System Instruction: Respond using the Socratic Method by asking guiding questions to make me think.]\n" + msg;
-    else if (selectedTone === 'concise') finalMsg = "[System Instruction: Respond extremely concisely. Use short sentences and bullet points only.]\n" + msg;
-    
-    const res=await fetch(API_BASE+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:finalMsg,language:selectedLanguage,student_id:student?student.id:null,subject:'general',model_provider:selectedModel!=='auto'?selectedModel:undefined,model_name:selectedModelName||undefined})});
-    const data=await res.json();if(!res.ok)throw new Error(data.detail||'Failed');addMsg(data.reply,'ai');
-  }catch(e){addMsg('⚠️ '+(e.message||'Could not reach the AI server.'),'ai')}
-}
-
-function clearChat(){document.getElementById('chatBox').innerHTML='<div class="msg ai">👋 Chat cleared!</div>'}
-
-const curatedDiagrams = [
-  {
-    keywords: ['heart', 'cardiovascular'],
-    title: 'Human Heart Structure',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Heart_diagram-en.svg/800px-Heart_diagram-en.svg.png',
-    desc: 'The human heart is a four-chambered muscular organ. The right atrium and ventricle pump deoxygenated blood to the lungs, while the left atrium and ventricle pump oxygenated blood to the rest of the body.'
-  },
-  {
-    keywords: ['mitochondria', 'mitochondrion', 'cell'],
-    title: 'Mitochondrion (The Powerhouse)',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Animal_mitochondrion_diagram_en_%28edit%29.svg/800px-Animal_mitochondrion_diagram_en_%28edit%29.svg.png',
-    desc: 'Mitochondria are double-membrane-bound organelles found in most eukaryotic organisms. They generate most of the cell\'s supply of adenosine triphosphate (ATP), used as a source of chemical energy.'
-  },
-  {
-    keywords: ['brain', 'nervous', 'cortex'],
-    title: 'Human Brain',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Brain_diagram_en.svg/800px-Brain_diagram_en.svg.png',
-    desc: 'The brain is the central organ of the human nervous system. The cerebrum handles conscious thought, the cerebellum coordinates movement, and the brainstem controls vital autonomic functions.'
-  },
-  {
-    keywords: ['eye', 'vision', 'retina'],
-    title: 'Human Eye Anatomy',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Schematic_diagram_of_the_human_eye_en.svg/800px-Schematic_diagram_of_the_human_eye_en.svg.png',
-    desc: 'Light enters the eye through the cornea, passes through the pupil and lens, and is focused onto the retina. The optic nerve then transmits visual information to the brain.'
-  },
-  {
-    keywords: ['plant', 'leaf', 'photosynthesis'],
-    title: 'Plant Cell Structure',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Plant_cell_structure_svg.svg/800px-Plant_cell_structure_svg.svg.png',
-    desc: 'Unlike animal cells, plant cells have a rigid cell wall, a large central vacuole, and chloroplasts where photosynthesis occurs.'
-  }
-];
-
-async function searchDiagram(query){
-  const val = query || document.getElementById('diagramSearch').value.trim();
-  if(!val) return;
-  document.getElementById('diagramSearch').value = val;
-  
-  document.getElementById('diagramContent').innerHTML = '<div style="text-align:center; padding: 40px;"><p style="color:var(--muted);"><i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Loading scientific diagram for ' + val + '...</p></div>';
-
-  const lowerVal = val.toLowerCase();
-  
-  // 1. Check curated scientific diagrams first
-  const curated = curatedDiagrams.find(d => d.keywords.some(k => lowerVal.includes(k)));
-  if (curated) {
-    document.getElementById('diagramContent').innerHTML = `
-      <div style="text-align:center;">
-        <div style="background:#fff; padding:10px; border-radius:12px; margin-bottom:20px; display:inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <img src="${curated.image}" style="max-width:100%; max-height: 400px; display:block;">
-        </div>
-        <div class="card-title" style="font-size:22px;margin-bottom:12px;color:var(--primary);">${curated.title}</div>
-        <p style="color:var(--text);line-height:1.8;text-align:left;font-size:14px;">${curated.desc}</p>
+    <div class="content">
+      <div class="topbar">
+        <h2>AI Teacher Intelligence System</h2>
+        <div class="user-badge"><div class="user-dot"></div><span id="topbarUser">Student</span></div>
       </div>
-    `;
-    return;
-  }
 
-  // 2. Fallback to Wikipedia Deep Search API
-  try {
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(val + ' diagram')}&gsrlimit=1&prop=pageimages|extracts&exintro=1&explaintext=1&pithumbsize=600&origin=*`;
-    const res = await fetch(searchUrl);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
-    
-    if (!data.query || !data.query.pages) throw new Error('No diagram found');
-    
-    const page = Object.values(data.query.pages)[0];
-    
-    let imgHtml = '';
-    if (page.thumbnail && page.thumbnail.source) {
-      imgHtml = `<img src="${page.thumbnail.source}" style="max-width:100%; max-height: 400px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">`;
-    } else {
-      imgHtml = `<div style="font-size:64px; margin-bottom:20px;">🖼️</div><p style="color:var(--muted); font-size:12px; margin-bottom:12px;">Image not available for this specific topic.</p>`;
-    }
-
-    // Limit extract length so it looks like a clean card
-    let snippet = page.extract || 'No description available.';
-    if (snippet.length > 500) snippet = snippet.substring(0, 500) + '...';
-
-    document.getElementById('diagramContent').innerHTML = `
-      <div style="text-align:center;">
-        <div style="background:#fff; padding:10px; border-radius:12px; margin-bottom:20px; display:inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            ${imgHtml.replace('margin-bottom: 20px;', 'display:block;')}
-        </div>
-        <div class="card-title" style="font-size:22px;margin-bottom:12px;color:var(--primary);">${page.title}</div>
-        <p style="color:var(--text);line-height:1.8;text-align:left;font-size:14px;">${snippet}</p>
-      </div>
-    `;
-  } catch(e) {
-    document.getElementById('diagramContent').innerHTML= `
-      <div style="text-align:center; padding: 40px;">
-        <div style="font-size:48px;margin-bottom:16px">📚</div>
-        <div class="card-title" style="font-size:18px;margin-bottom:12px">Could not locate a verified diagram for "${val}"</div>
-        <p style="color:var(--muted);line-height:1.8">Try using different keywords, or try searching for a well-known scientific term (e.g. Brain, Eye, Mitochondria).</p>
-      </div>
-    `;
-  }
-}
-
-function pickTopic(key,btn){document.querySelectorAll('#pane-diagrams .topic-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');const t=topicData[key];if(!t)return;document.getElementById('diagramContent').innerHTML='<div style="font-size:48px;margin-bottom:16px">'+t.icon+'</div><div class="card-title" style="font-size:18px;margin-bottom:12px">'+t.title+'</div><p style="color:var(--muted);line-height:1.8">'+t.desc+'</p>'}
-
-async function searchNotes(query) {
-  const val = query || document.getElementById('notesSearch').value.trim();
-  if(!val) return;
-  document.getElementById('notesSearch').value = val;
-  
-  document.getElementById('notesContent').innerHTML = '<div style="text-align:center; padding: 40px;"><p style="color:var(--muted);"><i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Generating study notes for ' + val + '...</p></div>';
-
-  try {
-    const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(val)}&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&origin=*`);
-    const data = await res.json();
-    if (!data.query || !data.query.pages) throw new Error("Not found");
-    
-    const page = Object.values(data.query.pages)[0];
-    const sentences = page.extract.match(/[^.!?]+[.!?]+/g) || [page.extract];
-    let listItems = '';
-    for(let i=0; i<Math.min(sentences.length, 8); i++) {
-        if(sentences[i].trim().length > 15) {
-            listItems += `<li style="margin-bottom:12px; line-height:1.6;">${sentences[i].trim()}</li>`;
-        }
-    }
-
-    document.getElementById('notesContent').innerHTML = `
-      <div id="printableNotesArea">
-          <div class="card-title" style="font-size:24px;margin-bottom:20px;color:var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 12px;">📑 Notes: ${page.title}</div>
-          <ul style="color:var(--text); padding-left:20px; font-size:15px;">
-              ${listItems}
-          </ul>
-      </div>
-      <div style="margin-top:24px; text-align:right;">
-          <button onclick="window.print()" class="btn" style="padding:10px 20px; font-size:14px;"><i class="fas fa-download"></i> Download Notes as PDF</button>
-      </div>
-    `;
-  } catch(e) {
-    document.getElementById('notesContent').innerHTML = `
-      <div style="text-align:center; padding: 40px;">
-        <div style="font-size:48px;margin-bottom:16px">📚</div>
-        <div class="card-title" style="font-size:18px;margin-bottom:12px">Could not find detailed notes for "${val}"</div>
-        <p style="color:var(--muted);line-height:1.8">Try searching for a broader or well-known topic.</p>
-      </div>
-    `;
-  }
-}
-
-function generateAssignments(query) {
-  const val = query || document.getElementById('assignmentSearch').value.trim();
-  if(!val) return;
-  document.getElementById('assignmentSearch').value = val;
-  
-  const title = val.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  const safeTitle = title.replace(/'/g, "\\'");
-  const dateStr = new Date(Date.now() + 86400000 * 3).toLocaleDateString();
-
-  document.getElementById('assignmentContent').innerHTML = `
-    <div class="card">
-        <div class="card-title">📝 ${title} Research Essay</div>
-        <div class="card-sub" style="color:var(--muted); font-size:13px; margin-top:6px;">Due: ${dateStr} • Writing Task</div>
-        <p style="font-size:14px; margin-top:12px; line-height:1.6; color:var(--text);">Write a comprehensive 500-word essay explaining the core principles, historical context, and real-world applications of ${title}.</p>
-        <button class="btn" style="margin-top:16px;padding:8px 20px;font-size:13px" onclick="startInteractiveEssay('${safeTitle}')">Start Writing</button>
-    </div>
-    <div class="card">
-        <div class="card-title">❓ ${title} Knowledge Quiz</div>
-        <div class="card-sub" style="color:var(--muted); font-size:13px; margin-top:6px;">Due: Tomorrow • Assessment</div>
-        <p style="font-size:14px; margin-top:12px; line-height:1.6; color:var(--text);">A dynamically generated 10-question multiple-choice quiz designed to test your fundamental understanding of ${title}.</p>
-        <button class="btn" style="margin-top:16px;padding:8px 20px;font-size:13px" onclick="startInteractiveQuiz('${safeTitle}')">Start Quiz</button>
-    </div>
-    <div class="card">
-        <div class="card-title">🔬 ${title} Practical Project</div>
-        <div class="card-sub" style="color:var(--muted); font-size:13px; margin-top:6px;">Due: Next Week • Applied Learning</div>
-        <p style="font-size:14px; margin-top:12px; line-height:1.6; color:var(--text);">Design a theoretical experiment or real-world case study demonstrating the effects and mechanics of ${title}.</p>
-        <button class="btn" style="margin-top:16px;padding:8px 20px;font-size:13px" onclick="startInteractiveProject('${safeTitle}')">View Details</button>
-    </div>
-  `;
-}
-
-function startTaskInChat(prompt) {
-    switchPane('dashboard');
-    document.getElementById('chatInput').value = prompt;
-    sendChat(true);
-}
-
-let quizData = [];
-let currentQuestionIndex = 0;
-let currentScore = 0;
-let currentQuizTopic = "";
-
-async function startInteractiveQuiz(topic) {
-    currentQuizTopic = topic;
-    switchPane('quiz');
-    const container = document.getElementById('quizContainer');
-    
-    container.innerHTML = `
-        <div style="text-align:center; padding: 40px;">
-            <p style="color:var(--text); font-size:16px;">
-                <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i>
-                Generating a dynamic 5-question quiz about <b>${topic}</b>...
-            </p>
-            <p style="color:var(--muted); font-size:13px; margin-top:12px;">The AI is actively writing the questions. This may take a few seconds.</p>
-        </div>
-    `;
-
-    try {
-        const prompt = `Write a 5-question multiple choice quiz about ${topic}. Return ONLY a valid JSON array of objects, where each object has 'question', 'options' (array of 4 strings), 'answer' (the exact correct string), and 'explanation' (string). Do not include markdown formatting or backticks.`;
-        
-        let success = false;
-        let attempts = 0;
-        let lastError = null;
-        
-        while (!success && attempts < 3) {
-            attempts++;
-            try {
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                let text = await res.text();
-                
-                let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                let startIdx = cleanText.indexOf('[');
-                let endIdx = cleanText.lastIndexOf(']');
-                if (startIdx === -1 || endIdx === -1) {
-                    throw new Error("AI refused to generate: " + cleanText.substring(0, 100));
-                }
-                cleanText = cleanText.substring(startIdx, endIdx + 1);
-                
-                quizData = JSON.parse(cleanText);
-                success = true;
-            } catch (err) {
-                lastError = err;
-            }
-        }
-        
-        if (!success) throw lastError;
-        
-        currentQuestionIndex = 0;
-        currentScore = 0;
-        renderQuizQuestion();
-    } catch(e) {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                <p style="color:#ef4444;">Failed to generate quiz. Please try again or try a different topic.</p>
-                <p style="color:var(--muted); font-size:12px; margin-top:8px; font-family:monospace;">Error: ${e.message}</p>
-                <button class="btn" style="margin-top:24px;" onclick="switchPane('assignments')">Go Back</button>
+      <div class="panels">
+        <!-- MODULE AREA -->
+        <div class="module">
+          
+          <!-- DASHBOARD -->
+          <div class="pane active" id="pane-dashboard">
+            <div class="section-title">📊 Dashboard</div>
+            <div class="grid">
+              <div class="card">
+                <div class="card-icon">💬</div>
+                <div class="kpi" id="kpiChats">0</div>
+                <div class="card-sub">Questions Asked</div>
+              </div>
+              <div class="card">
+                <div class="card-icon">🎯</div>
+                <div class="kpi" id="kpiClass">-</div>
+                <div class="card-sub">Your Class</div>
+              </div>
+              <div class="card">
+                <div class="card-icon">🔥</div>
+                <div class="kpi" id="kpiStreak">1</div>
+                <div class="card-sub">Day Streak</div>
+              </div>
+              <div class="card">
+                <div class="card-icon">🤖</div>
+                <div class="kpi" id="kpiModel">Auto</div>
+                <div class="card-sub">AI Model</div>
+              </div>
             </div>
-        `;
-    }
-}
-
-function renderQuizQuestion() {
-    if (currentQuestionIndex >= quizData.length) {
-        renderQuizResults();
-        return;
-    }
-
-    const q = quizData[currentQuestionIndex];
-    const container = document.getElementById('quizContainer');
-    
-    let optionsHtml = '';
-    q.options.forEach((opt, idx) => {
-        optionsHtml += `<button class="quiz-option" id="quizOpt_${idx}" onclick="checkQuizAnswer(${idx})">${opt}</button>`;
-    });
-
-    container.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-            <div class="card-sub" style="font-size:14px;">Question ${currentQuestionIndex + 1} of ${quizData.length}</div>
-            <div class="card-sub" style="font-size:14px; color:var(--primary); font-weight:700;">Score: ${currentScore}</div>
-        </div>
-        <div style="font-size:18px; font-weight:600; line-height:1.5; margin-bottom:24px;">${q.question}</div>
-        <div id="quizOptionsContainer">
-            ${optionsHtml}
-        </div>
-        <div id="quizFeedback" style="margin-top:24px; padding:20px; border-radius:12px; display:none;"></div>
-        <div style="margin-top:24px; text-align:right;">
-            <button id="nextQuizBtn" class="btn" style="display:none; padding:10px 24px;" onclick="currentQuestionIndex++; renderQuizQuestion();">Next Question <i class="fas fa-arrow-right" style="margin-left:8px;"></i></button>
-        </div>
-    `;
-}
-
-function checkQuizAnswer(selectedIdx) {
-    const q = quizData[currentQuestionIndex];
-    const selectedOpt = q.options[selectedIdx];
-    const isCorrect = (selectedOpt === q.answer);
-    
-    if (isCorrect) currentScore++;
-
-    q.options.forEach((opt, idx) => {
-        const btn = document.getElementById('quizOpt_' + idx);
-        btn.disabled = true;
-        if (opt === q.answer) {
-            btn.classList.add('correct');
-        } else if (idx === selectedIdx && !isCorrect) {
-            btn.classList.add('wrong');
-        }
-    });
-
-    const feedback = document.getElementById('quizFeedback');
-    feedback.style.display = 'block';
-    feedback.style.background = isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-    feedback.style.border = `1px solid ${isCorrect ? 'var(--success)' : '#ef4444'}`;
-    
-    feedback.innerHTML = `
-        <div style="font-size:16px; font-weight:700; margin-bottom:8px; color:${isCorrect ? 'var(--success)' : '#ef4444'};">
-            ${isCorrect ? '✅ Correct!' : '❌ Incorrect'}
-        </div>
-        <div style="font-size:14px; line-height:1.6; color:var(--text);">${q.explanation}</div>
-    `;
-
-    document.getElementById('nextQuizBtn').style.display = 'inline-block';
-}
-
-function renderQuizResults() {
-    const container = document.getElementById('quizContainer');
-    const percentage = Math.round((currentScore / quizData.length) * 100);
-    
-    let msg = "Great job!";
-    if (percentage === 100) msg = "Perfect score! Outstanding!";
-    else if (percentage < 50) msg = "Keep studying, you'll get it next time!";
-
-    container.innerHTML = `
-        <div style="text-align:center; padding: 40px;">
-            <div style="font-size: 64px; margin-bottom: 16px;">🏆</div>
-            <div class="card-title" style="font-size:28px; margin-bottom:12px;">Quiz Complete!</div>
-            <div style="font-size:20px; color:var(--text); margin-bottom:8px;">You scored <b>${currentScore} / ${quizData.length}</b></div>
-            <p style="color:var(--primary); font-weight:600; font-size:16px; margin-bottom:32px;">${msg}</p>
-            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
-                <button class="btn" style="padding:12px 24px;" onclick="appendInteractiveQuiz()">🔄 Generate 5 More Questions</button>
-                <button class="btn" style="padding:12px 24px; background:var(--surface); border:1px solid var(--border); color:var(--text);" onclick="downloadQuizPDF()">📄 Download PDF</button>
-                <button class="btn" style="padding:12px 24px; background:transparent; border:1px solid transparent; color:var(--muted);" onclick="switchPane('assignments')">Return</button>
-            </div>
-        </div>
-    `;
-}
-
-async function appendInteractiveQuiz() {
-    const container = document.getElementById('quizContainer');
-    container.innerHTML = `
-        <div style="text-align:center; padding: 40px;">
-            <p style="color:var(--text); font-size:16px;">
-                <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i>
-                Generating 5 <b>new</b> advanced questions about <b>${currentQuizTopic}</b>...
-            </p>
-        </div>
-    `;
-
-    try {
-        const prompt = `Write a completely new 5-question multiple choice quiz about ${currentQuizTopic}. Ensure these questions are different and more advanced than standard introductory questions. Return ONLY a valid JSON array of objects, where each object has 'question', 'options' (array of 4 strings), 'answer' (the exact correct string), and 'explanation' (string). Do not include markdown formatting or backticks.`;
-        
-        let success = false;
-        let attempts = 0;
-        let lastError = null;
-        let newData = null;
-        
-        while (!success && attempts < 3) {
-            attempts++;
-            try {
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                let text = await res.text();
-                
-                let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                let startIdx = cleanText.indexOf('[');
-                let endIdx = cleanText.lastIndexOf(']');
-                if (startIdx === -1 || endIdx === -1) {
-                    throw new Error("AI refused to generate: " + cleanText.substring(0, 100));
-                }
-                cleanText = cleanText.substring(startIdx, endIdx + 1);
-                
-                newData = JSON.parse(cleanText);
-                success = true;
-            } catch(err) {
-                lastError = err;
-            }
-        }
-        
-        if (!success) throw lastError;
-        
-        quizData = quizData.concat(newData);
-        renderQuizQuestion();
-    } catch(e) {
-        console.error("Append Quiz Error:", e);
-        alert("Failed to load more questions: " + e.message);
-        renderQuizResults();
-    }
-}
-
-function downloadQuizPDF() {
-    let html = `<div class="card-title" style="font-size:24px;margin-bottom:20px;color:var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 12px;">🎓 Interactive Quiz: ${currentQuizTopic}</div>`;
-    
-    quizData.forEach((q, i) => {
-        html += `<div style="margin-bottom: 24px; break-inside: avoid;">
-            <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${i+1}. ${q.question}</div>
-            <ul style="list-style:none; padding-left:0; margin-bottom:12px;">`;
-        
-        q.options.forEach(opt => {
-            const isAns = (opt === q.answer);
-            html += `<li style="margin-bottom:6px; padding:8px 12px; border:1px solid ${isAns ? 'var(--success)' : 'var(--border)'}; background:${isAns ? 'rgba(16, 185, 129, 0.1)' : 'transparent'}; border-radius:8px; font-size:14px; color:${isAns ? 'var(--success)' : 'var(--text)'}; font-weight:${isAns ? 'bold' : 'normal'};">
-                ${isAns ? '✅' : '○'} ${opt}
-            </li>`;
-        });
-        
-        html += `</ul>
-            <div style="font-size:13px; color:var(--muted); line-height:1.5; padding-left:12px; border-left:3px solid var(--primary);">
-                <b>Explanation:</b> ${q.explanation}
-            </div>
-        </div>`;
-    });
-
-    document.getElementById('printableQuizArea').innerHTML = html;
-    window.print();
-    // clear memory
-    setTimeout(() => { document.getElementById('printableQuizArea').innerHTML = ''; }, 1000);
-}
-
-let currentEssayTopic = "";
-
-async function startInteractiveEssay(topic) {
-    currentEssayTopic = topic;
-    switchPane('essay');
-    const container = document.getElementById('essayContainer');
-    
-    container.innerHTML = `
-        <div style="text-align:center; padding: 40px;">
-            <p style="color:var(--text); font-size:16px;">
-                <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i>
-                Generating a custom essay prompt and grading rubric for <b>${topic}</b>...
-            </p>
-        </div>
-    `;
-
-    try {
-        const prompt = `Generate an advanced high-school level essay assignment about ${topic}. Return ONLY a valid JSON object with the keys: 'title', 'prompt' (string detailing the specific question they must answer), and 'rubric' (array of 3 strings outlining grading criteria). Do not include markdown formatting.`;
-        
-        let success = false;
-        let attempts = 0;
-        let lastError = null;
-        let essayData = null;
-        
-        while (!success && attempts < 3) {
-            attempts++;
-            try {
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                let text = await res.text();
-                
-                let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                let startIdx = cleanText.indexOf('{');
-                let endIdx = cleanText.lastIndexOf('}');
-                if (startIdx === -1 || endIdx === -1) {
-                    throw new Error("AI refused to generate: " + cleanText.substring(0, 100));
-                }
-                cleanText = cleanText.substring(startIdx, endIdx + 1);
-                
-                essayData = JSON.parse(cleanText);
-                success = true;
-            } catch(err) {
-                lastError = err;
-            }
-        }
-        
-        if (!success) throw lastError;
-        
-        container.innerHTML = `
-            <div class="card-title" style="font-size:24px; color:var(--primary); margin-bottom:16px;">✍️ ${essayData.title}</div>
-            <div style="background:var(--surface); padding:20px; border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
-                <div style="font-size:16px; font-weight:600; margin-bottom:8px;">Prompt:</div>
-                <div style="font-size:14px; line-height:1.6; color:var(--text);">${essayData.prompt}</div>
-            </div>
-            <div style="margin-bottom:24px;">
-                <div style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--muted);">Grading Rubric:</div>
-                <ul style="font-size:13px; color:var(--muted); padding-left:20px; line-height:1.5;">
-                    ${essayData.rubric.map(r => `<li>${r}</li>`).join('')}
-                </ul>
-            </div>
-            <textarea id="essayEditor" placeholder="Start writing your essay here..." style="width:100%; height:300px; padding:20px; background:var(--bg); border:1px solid var(--border); border-radius:12px; color:var(--text); font-size:15px; font-family:inherit; line-height:1.6; resize:vertical; outline:none; transition:0.3s;"></textarea>
-            <div style="margin-top:24px; text-align:right;">
-                <button class="btn" onclick="gradeEssay()" style="padding:12px 32px;"><i class="fas fa-check-double" style="margin-right:8px;"></i> Submit for AI Grading</button>
-            </div>
-            <div id="essayFeedback" style="margin-top:24px; display:none;"></div>
-        `;
-        
-        document.getElementById('essayEditor').addEventListener('focus', function() { this.style.borderColor = 'var(--primary)'; });
-        document.getElementById('essayEditor').addEventListener('blur', function() { this.style.borderColor = 'var(--border)'; });
-        
-    } catch(e) {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                <p style="color:#ef4444;">Failed to generate essay prompt. Please try again.</p>
-                <p style="color:var(--muted); font-size:12px; margin-top:8px; font-family:monospace;">Error: ${e.message}</p>
-                <button class="btn" style="margin-top:24px;" onclick="switchPane('assignments')">Go Back</button>
-            </div>
-        `;
-    }
-}
-
-async function gradeEssay() {
-    const text = document.getElementById('essayEditor').value.trim();
-    if (text.length < 50) {
-        alert("Your essay is too short! Please write at least a few sentences before submitting.");
-        return;
-    }
-    
-    const feedbackDiv = document.getElementById('essayFeedback');
-    feedbackDiv.style.display = 'block';
-    feedbackDiv.innerHTML = `
-        <div style="padding:20px; background:var(--surface); border-radius:12px; text-align:center;">
-            <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i> Grading your essay...
-        </div>
-    `;
-    
-    try {
-        const prompt = `Grade this student essay about ${currentEssayTopic}. Return ONLY a valid JSON object with: 'score' (number out of 100), 'strengths' (string), 'weaknesses' (string), and 'conclusion' (string). The essay is: "${text}"`;
-        const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-        let rawText = await res.text();
-        
-        let cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        let startIdx = cleanText.indexOf('{');
-        let endIdx = cleanText.lastIndexOf('}');
-        if (startIdx !== -1 && endIdx !== -1) cleanText = cleanText.substring(startIdx, endIdx + 1);
-        
-        const grading = JSON.parse(cleanText);
-        
-        let color = grading.score >= 80 ? 'var(--success)' : (grading.score >= 60 ? '#f59e0b' : '#ef4444');
-        
-        feedbackDiv.innerHTML = `
-            <div style="padding:24px; background:rgba(99,102,241,0.05); border:1px solid var(--primary); border-radius:12px;">
-                <div style="font-size:32px; font-weight:800; color:${color}; margin-bottom:16px; text-align:center;">Score: ${grading.score} / 100</div>
-                <div style="margin-bottom:16px;">
-                    <b style="color:var(--success);">✅ Strengths:</b> <span style="font-size:14px; color:var(--text);">${grading.strengths}</span>
-                </div>
-                <div style="margin-bottom:16px;">
-                    <b style="color:#ef4444;">🎯 Areas for Improvement:</b> <span style="font-size:14px; color:var(--text);">${grading.weaknesses}</span>
-                </div>
-                <div style="padding-top:12px; border-top:1px solid var(--border); font-size:14px; font-style:italic; color:var(--muted);">
-                    ${grading.conclusion}
-                </div>
-                <div style="margin-top:24px; text-align:center;">
-                    <button class="btn" onclick="switchPane('assignments')">Return to Assignments</button>
-                </div>
-            </div>
-        `;
-    } catch (e) {
-        feedbackDiv.innerHTML = `<div style="color:#ef4444; padding:16px;">Failed to grade essay. Error: ${e.message}</div>`;
-    }
-}
-
-async function startInteractiveProject(topic) {
-    switchPane('project');
-    const container = document.getElementById('projectContainer');
-    
-    container.innerHTML = `
-        <div style="text-align:center; padding: 40px;">
-            <p style="color:var(--text); font-size:16px;">
-                <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i>
-                Generating practical project ideas for <b>${topic}</b>...
-            </p>
-        </div>
-    `;
-
-    try {
-        const prompt = `Create a practical, real-world project assignment for a student studying ${topic}. Return ONLY a valid JSON object with: 'title' (string), 'objective' (string), and 'steps' (array of 4 specific strings detailing exactly what the student must do). Do not include markdown formatting.`;
-        
-        let success = false;
-        let attempts = 0;
-        let lastError = null;
-        let projData = null;
-        
-        while (!success && attempts < 3) {
-            attempts++;
-            try {
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                let text = await res.text();
-                
-                let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                let startIdx = cleanText.indexOf('{');
-                let endIdx = cleanText.lastIndexOf('}');
-                if (startIdx === -1 || endIdx === -1) {
-                    throw new Error("AI refused to generate: " + cleanText.substring(0, 100));
-                }
-                cleanText = cleanText.substring(startIdx, endIdx + 1);
-                
-                projData = JSON.parse(cleanText);
-                success = true;
-            } catch(err) {
-                lastError = err;
-            }
-        }
-        
-        if (!success) throw lastError;
-        
-        let stepsHtml = '';
-        projData.steps.forEach((step, idx) => {
-            stepsHtml += `
-                <div style="display:flex; align-items:flex-start; margin-bottom:16px; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; cursor:pointer;" onclick="this.style.opacity='0.5'; this.querySelector('i').className='fas fa-check-circle'; this.querySelector('i').style.color='var(--success)';">
-                    <i class="far fa-circle" style="font-size:20px; color:var(--muted); margin-right:16px; margin-top:2px; transition:0.3s;"></i>
-                    <div style="font-size:15px; color:var(--text); line-height:1.5;"><b>Step ${idx+1}:</b> ${step}</div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = `
-            <div class="card-title" style="font-size:24px; color:var(--primary); margin-bottom:12px;">🔬 ${projData.title}</div>
-            <p style="font-size:15px; color:var(--muted); line-height:1.6; margin-bottom:32px;"><b>Objective:</b> ${projData.objective}</p>
             
-            <div style="font-size:18px; font-weight:600; margin-bottom:16px; color:var(--text);">Project Action Plan</div>
-            <p style="font-size:13px; color:var(--muted); margin-bottom:20px;">Click on a step to mark it as complete.</p>
+            <div class="section-title" style="margin-top:40px">💡 Suggested Topics for You</div>
+            <div class="recommendations-container" id="dashboardSuggestions">
+              <div class="card"><p style="color:var(--muted)">Register to view suggestions for your curriculum.</p></div>
+            </div>
+
+            <div class="section-title" style="margin-top:40px">⚡ Quick Actions</div>
+            <div class="grid">
+              <div class="card" style="cursor:pointer" onclick="switchPane('voice', document.querySelectorAll('.nav-btn')[1])">
+                <div class="card-icon">🎤</div>
+                <div class="card-title">Voice Assistant</div>
+                <div class="card-sub">Have a natural spoken conversation with your AI tutor</div>
+              </div>
+              <div class="card" style="cursor:pointer" onclick="switchPane('diagrams', document.querySelectorAll('.nav-btn')[2])">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Diagrams</div>
+                <div class="card-sub">Interactive visual maps with hover zones and vectors</div>
+              </div>
+              <div class="card" style="cursor:pointer" onclick="switchPane('notes', document.querySelectorAll('.nav-btn')[3])">
+                <div class="card-icon">📝</div>
+                <div class="card-title">AI Notes & Flashcards</div>
+                <div class="card-sub">Generate study notes and flip 3D cards to test memory</div>
+              </div>
+              <div class="card" style="cursor:pointer" onclick="switchPane('assignments', document.querySelectorAll('.nav-btn')[4])">
+                <div class="card-icon">📋</div>
+                <div class="card-title">Assignments</div>
+                <div class="card-sub">Take real-time practice quizzes and assignments</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VOICE -->
+          <div class="pane" id="pane-voice">
+            <div class="section-title">🎤 Voice Assistant</div>
+            <div class="card" style="text-align:center;padding:48px;max-width:640px;margin:0 auto">
+              <div style="font-size:64px;margin-bottom:16px">🎙️</div>
+              <p style="color:var(--text);font-size:16px;font-weight:600;margin-bottom:8px">Speak with AI Teacher</p>
+              <p style="color:var(--muted);margin-bottom:24px">Ask a question out loud and the AI tutor will answer back verbally.</p>
+              
+              <div class="field" style="max-width:320px;margin:0 auto 20px">
+                <label>Assistant Language</label>
+                <select id="voiceLang">
+                  <option value="en-IN">English (India)</option>
+                  <option value="hi-IN">Hindi (हिन्दी)</option>
+                  <option value="ta-IN">Tamil (தமிழ்)</option>
+                  <option value="te-IN">Telugu (తెలుగు)</option>
+                  <option value="mr-IN">Marathi (मराठी)</option>
+                  <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+                  <option value="bn-IN">Bengali (বাংলা)</option>
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px">
+                <input type="checkbox" id="voiceSpeakToggle" checked style="width:18px;height:18px;cursor:pointer">
+                <label for="voiceSpeakToggle" style="color:var(--text);font-size:14px;cursor:pointer;font-weight:600">🎙️ Read Aloud AI Responses</label>
+                <button class="btn btn-sm btn-outline" id="stopSpeakBtn" style="padding: 6px 14px; font-size: 12px; margin-left: 12px; display: none;" onclick="stopSpeaking()"><i class="fas fa-volume-mute"></i> Stop Voice</button>
+              </div>
+
+              <!-- Glowing Mic Waveform -->
+              <div class="voice-wave-container" id="voiceWave">
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+              </div>
+
+              <button class="btn btn-lg" id="voiceBtn" onclick="toggleVoice()">Start Listening</button>
+              <p id="voiceStatus" style="color:var(--muted);font-size:13px;margin-top:20px;min-height:20px"></p>
+            </div>
+          </div>
+
+          <!-- DIAGRAMS -->
+          <div class="pane" id="pane-diagrams">
+            <div class="section-title">📊 Interactive Diagrams</div>
+            <div style="display:flex;gap:12px;margin-bottom:20px;width:100%;max-width:540px;">
+              <input id="diagramSearchInput" placeholder="Search any scientific diagram (e.g. Atom, Cell, Volcano, Water Cycle)..." style="flex:1;padding:12px 20px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--text);outline:none;font-size:14px;transition:var(--transition);" onkeydown="if(event.key==='Enter')searchDiagramTopic()">
+              <button class="btn btn-sm" onclick="searchDiagramTopic()"><i class="fas fa-search"></i> Search Diagram</button>
+            </div>
             
-            ${stepsHtml}
+            <div class="diagram-container">
+              <!-- Visual Viewport -->
+              <div class="diagram-viewport" id="diagramViewport">
+                <!-- Inline SVGs are dynamically loaded here -->
+                <p style="color:var(--muted)">Select a topic to view its interactive diagram.</p>
+                <div class="diagram-tooltip hidden" id="diagramTooltip">
+                  <h4 id="tooltipTitle">Hotspot Info</h4>
+                  <p id="tooltipDesc">Details...</p>
+                </div>
+              </div>
+              
+              <!-- Info Side Panel -->
+              <div class="diagram-info-panel">
+                <div class="card" style="padding:28px">
+                  <div class="card-title" id="diagramTitle" style="font-size:20px;margin-bottom:12px">Select a Topic</div>
+                  <p style="color:var(--muted);line-height:1.7;font-size:14px;margin-bottom:20px" id="diagramDesc">
+                    Interactive educational diagrams. Hover or click on the hotspots to view scientific insights.
+                  </p>
+                  
+                  <div id="simControlsContainer"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTES -->
+          <div class="pane" id="pane-notes">
+            <div class="section-title">📝 Study Notes & Flashcards</div>
+            <div class="search-notes-wrapper" style="margin-bottom: 24px; max-width: 600px;">
+              <div class="input-group">
+                <input type="text" id="notesSearchInput" placeholder="Enter any scientific topic (e.g. Gravity, Mitosis, Telescope)..." onkeydown="if(event.key==='Enter') searchNotesTopic()">
+                <button class="btn" onclick="searchNotesTopic()"><i class="fas fa-search"></i> Search Notes</button>
+              </div>
+            </div>
             
-            <div style="margin-top:40px; text-align:center;">
-                <button class="btn" onclick="switchPane('assignments')" style="padding:12px 32px;">Mark Project Complete & Return</button>
-            </div>
-        `;
-        
-    } catch(e) {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                <p style="color:#ef4444;">Failed to generate project details. Please try again.</p>
-                <p style="color:var(--muted); font-size:12px; margin-top:8px; font-family:monospace;">Error: ${e.message}</p>
-                <button class="btn" style="margin-top:24px;" onclick="switchPane('assignments')">Go Back</button>
-            </div>
-        `;
-    }
-}
-
-function generatePapers(query) {
-  const val = query || document.getElementById('paperSearch').value.trim();
-  if(!val) return;
-  document.getElementById('paperSearch').value = val;
-  
-  const title = val.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  const safeTitle = title.replace(/'/g, "\\'");
-
-  document.getElementById('paperContent').innerHTML = `
-    <div class="card">
-        <div class="card-title">📄 ${title} Comprehensive Exam</div>
-        <div class="card-sub" style="color:var(--muted); font-size:13px; margin-top:6px;">Format: MCQs, Short Answers, Long Essay</div>
-        <p style="font-size:14px; margin-top:12px; line-height:1.6; color:var(--text);">A dynamically generated full-length practice paper designed to thoroughly test your mastery of ${title}.</p>
-        <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
-            <button class="btn" style="padding:8px 20px;font-size:13px" onclick="startPracticeTest('${safeTitle}')"><i class="fas fa-desktop" style="margin-right:6px;"></i> Take Test</button>
-            <button class="btn" style="padding:8px 20px;font-size:13px; background:var(--surface); border:1px solid var(--border); color:var(--text);" onclick="downloadPracticePaper('${safeTitle}')"><i class="fas fa-file-pdf" style="margin-right:6px;"></i> View PDF</button>
-        </div>
-    </div>
-  `;
-}
-
-let currentPaperData = null;
-let currentPaperTopic = "";
-
-async function fetchPracticePaperJSON(topic) {
-    const prompt = `Generate a concise practice exam about ${topic}. Return ONLY a valid JSON object with: 
-    'title' (string),
-    'mcqs' (array of 3 objects, each with 'question', 'options' (array of 4 strings), and 'answer' (the exact correct string)),
-    'shorts' (array of 2 strings containing short-answer questions),
-    'long' (a single string containing a long essay question).
-    Do not include markdown formatting.`;
-    
-    let success = false;
-    let attempts = 0;
-    let lastError = null;
-    let paperData = null;
-    
-    while (!success && attempts < 3) {
-        attempts++;
-        try {
-            const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-            let text = await res.text();
-            
-            let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            let startIdx = cleanText.indexOf('{');
-            let endIdx = cleanText.lastIndexOf('}');
-            if (startIdx === -1 || endIdx === -1) {
-                throw new Error("AI refused: " + cleanText.substring(0, 100));
-            }
-            cleanText = cleanText.substring(startIdx, endIdx + 1);
-            
-            paperData = JSON.parse(cleanText);
-            success = true;
-        } catch(err) {
-            lastError = err;
-        }
-    }
-    
-    if (!success) throw lastError;
-    return paperData;
-}
-
-async function startPracticeTest(topic) {
-    currentPaperTopic = topic;
-    switchPane('paper-test');
-    const container = document.getElementById('paperTestContainer');
-    
-    container.innerHTML = `
-        <div style="text-align:center; padding: 40px;">
-            <p style="color:var(--text); font-size:16px;">
-                <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i>
-                Generating full practice exam for <b>${topic}</b>...
-            </p>
-        </div>
-    `;
-
-    try {
-        currentPaperData = await fetchPracticePaperJSON(topic);
-        
-        let html = `<div class="card-title" style="font-size:24px; color:var(--primary); margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:12px;">📄 ${currentPaperData.title}</div>`;
-        
-        html += `<div style="font-size:18px; font-weight:600; margin-bottom:16px; color:var(--text);">Part A: Multiple Choice</div>`;
-        currentPaperData.mcqs.forEach((q, i) => {
-            html += `
-                <div style="margin-bottom:24px; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:12px;">
-                    <div style="font-weight:600; margin-bottom:12px; font-size:15px;">${i+1}. ${q.question}</div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-            `;
-            q.options.forEach(opt => {
-                html += `<label style="display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer;"><input type="radio" name="mcq_${i}" value="${opt.replace(/"/g, '&quot;')}"> ${opt}</label>`;
-            });
-            html += `</div></div>`;
-        });
-        
-        html += `<div style="font-size:18px; font-weight:600; margin-bottom:16px; margin-top:32px; color:var(--text);">Part B: Short Answers</div>`;
-        currentPaperData.shorts.forEach((q, i) => {
-            html += `
-                <div style="margin-bottom:24px;">
-                    <div style="font-weight:600; margin-bottom:8px; font-size:15px;">${i+1}. ${q}</div>
-                    <textarea id="shortAns_${i}" placeholder="Type your answer here..." style="width:100%; height:100px; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; resize:vertical; outline:none;"></textarea>
-                </div>
-            `;
-        });
-        
-        html += `<div style="font-size:18px; font-weight:600; margin-bottom:16px; margin-top:32px; color:var(--text);">Part C: Long Essay</div>`;
-        html += `
-            <div style="margin-bottom:24px;">
-                <div style="font-weight:600; margin-bottom:8px; font-size:15px;">1. ${currentPaperData.long}</div>
-                <textarea id="longAns_0" placeholder="Type your detailed essay here..." style="width:100%; height:250px; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; resize:vertical; outline:none;"></textarea>
-            </div>
-        `;
-        
-        html += `
-            <div style="margin-top:32px; text-align:center;">
-                <button class="btn" onclick="submitPracticeTest()" style="padding:12px 32px;"><i class="fas fa-check-double" style="margin-right:8px;"></i> Submit Exam for AI Grading</button>
-            </div>
-            <div id="paperFeedback" style="margin-top:24px; display:none;"></div>
-        `;
-        
-        container.innerHTML = html;
-        
-    } catch(e) {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                <p style="color:#ef4444;">Failed to generate exam. Please try again.</p>
-                <p style="color:var(--muted); font-size:12px; margin-top:8px; font-family:monospace;">Error: ${e.message}</p>
-                <button class="btn" style="margin-top:24px;" onclick="switchPane('papers')">Go Back</button>
-            </div>
-        `;
-    }
-}
-
-async function submitPracticeTest() {
-    let mcqScore = 0;
-    currentPaperData.mcqs.forEach((q, i) => {
-        const selected = document.querySelector(`input[name="mcq_${i}"]:checked`);
-        if (selected && selected.value === q.answer) mcqScore++;
-    });
-    
-    let shortAnswers = [];
-    currentPaperData.shorts.forEach((q, i) => {
-        shortAnswers.push(`Q: ${q} | Ans: ${document.getElementById('shortAns_'+i).value.trim()}`);
-    });
-    
-    let longAnswer = `Q: ${currentPaperData.long} | Ans: ${document.getElementById('longAns_0').value.trim()}`;
-    
-    const feedbackDiv = document.getElementById('paperFeedback');
-    feedbackDiv.style.display = 'block';
-    feedbackDiv.innerHTML = `
-        <div style="padding:20px; background:var(--surface); border-radius:12px; text-align:center;">
-            <i class="fas fa-spinner fa-spin" style="margin-right:8px; color:var(--primary);"></i> AI is grading your entire exam...
-        </div>
-    `;
-    
-    try {
-        const prompt = `Grade this student exam about ${currentPaperTopic}. The student got ${mcqScore}/${currentPaperData.mcqs.length} on MCQs. Short Answers: ${JSON.stringify(shortAnswers)}. Long Answer: ${longAnswer}. Return ONLY a valid JSON object with: 'total_score' (number out of 100), 'feedback' (string summarizing their performance), and 'corrections' (string detailing any mistakes they made). Do not include markdown formatting.`;
-        
-        let success = false;
-        let attempts = 0;
-        let grading = null;
-        
-        while (!success && attempts < 3) {
-            attempts++;
-            try {
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                let text = await res.text();
-                let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                let startIdx = cleanText.indexOf('{');
-                let endIdx = cleanText.lastIndexOf('}');
-                if (startIdx !== -1 && endIdx !== -1) {
-                    cleanText = cleanText.substring(startIdx, endIdx + 1);
-                    grading = JSON.parse(cleanText);
-                    success = true;
-                }
-            } catch(e) {}
-        }
-        
-        if (!success) throw new Error("Grading failed after 3 attempts.");
-        
-        let color = grading.total_score >= 80 ? 'var(--success)' : (grading.total_score >= 60 ? '#f59e0b' : '#ef4444');
-        
-        feedbackDiv.innerHTML = `
-            <div style="padding:24px; background:rgba(99,102,241,0.05); border:1px solid var(--primary); border-radius:12px;">
-                <div style="font-size:32px; font-weight:800; color:${color}; margin-bottom:16px; text-align:center;">Final Score: ${grading.total_score} / 100</div>
-                <div style="font-size:14px; margin-bottom:12px;"><b>MCQ Performance:</b> ${mcqScore} / ${currentPaperData.mcqs.length} correct</div>
-                <div style="margin-bottom:16px;">
-                    <b style="color:var(--text);">📝 AI Feedback:</b> <span style="font-size:14px; color:var(--text);">${grading.feedback}</span>
-                </div>
-                <div style="margin-bottom:16px;">
-                    <b style="color:#ef4444;">🎯 Corrections:</b> <span style="font-size:14px; color:var(--text);">${grading.corrections}</span>
-                </div>
-                <div style="margin-top:24px; text-align:center;">
-                    <button class="btn" onclick="switchPane('papers')">Return to Practice Papers</button>
-                </div>
-            </div>
-        `;
-    } catch (e) {
-        feedbackDiv.innerHTML = `<div style="color:#ef4444; padding:16px;">Failed to grade exam. Error: ${e.message}</div>`;
-    }
-}
-
-async function downloadPracticePaper(topic) {
-    const btn = event.currentTarget;
-    const oldText = btn.innerHTML;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating PDF...`;
-    
-    try {
-        const paper = await fetchPracticePaperJSON(topic);
-        
-        let html = `
-        <div style="font-family:sans-serif; color:#000;">
-            <h1 style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:30px;">Practice Examination: ${paper.title}</h1>
-            
-            <h3>Part A: Multiple Choice Questions</h3>
-        `;
-        
-        paper.mcqs.forEach((q, i) => {
-            html += `<div style="margin-bottom:20px; break-inside:avoid;">
-                <p><b>${i+1}. ${q.question}</b></p>
-                <ul style="list-style-type:none; padding-left:10px;">
-            `;
-            q.options.forEach(opt => {
-                html += `<li>○ ${opt}</li>`;
-            });
-            html += `</ul></div>`;
-        });
-        
-        html += `<h3 style="margin-top:30px;">Part B: Short Answer Questions</h3>`;
-        paper.shorts.forEach((q, i) => {
-            html += `<div style="margin-bottom:40px; break-inside:avoid;">
-                <p><b>${i+1}. ${q}</b></p>
-                <div style="height:100px; border:1px solid #ccc; border-radius:4px;"></div>
-            </div>`;
-        });
-        
-        html += `<h3 style="margin-top:30px;">Part C: Long Essay</h3>`;
-        html += `<div style="margin-bottom:40px; break-inside:avoid;">
-            <p><b>1. ${paper.long}</b></p>
-            <div style="height:300px; border:1px solid #ccc; border-radius:4px;"></div>
-        </div>`;
-        
-        html += `
-            <div style="break-before:page; border-top:2px dashed #ccc; padding-top:20px; margin-top:50px;">
-                <h2 style="text-align:center;">Answer Key (For Teacher/Self-Grading)</h2>
-                <h3>Part A: MCQs</h3>
-                <ul>
-        `;
-        paper.mcqs.forEach((q, i) => {
-            html += `<li><b>Q${i+1}:</b> ${q.answer}</li>`;
-        });
-        html += `</ul></div></div>`;
-        
-        document.getElementById('printableQuizArea').innerHTML = html;
-        window.print();
-        setTimeout(() => { document.getElementById('printableQuizArea').innerHTML = ''; }, 1000);
-        
-    } catch(e) {
-        alert("Failed to generate PDF: " + e.message);
-    }
-    
-    btn.innerHTML = oldText;
-}
-
-// TOOL MODAL LOGIC
-function openTool(toolName) {
-    const modal = document.getElementById('toolModal');
-    const title = document.getElementById('toolModalTitle');
-    const content = document.getElementById('toolModalContent');
-    
-    modal.style.display = 'flex';
-    setTimeout(() => modal.style.opacity = '1', 10);
-    
-    if (toolName === 'notepad') {
-        title.innerHTML = '📝 Notepad';
-        const savedNotes = localStorage.getItem('atis_notepad') || '';
-        content.innerHTML = `
-            <textarea id="toolNotepad" style="width:100%; height:300px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; color:var(--text); font-family:inherit; resize:vertical; outline:none;" placeholder="Type your notes here... They are saved automatically!">${savedNotes}</textarea>
-        `;
-        document.getElementById('toolNotepad').addEventListener('input', (e) => {
-            localStorage.setItem('atis_notepad', e.target.value);
-        });
-    }
-    else if (toolName === 'calculator') {
-        title.innerHTML = '🧮 Calculator';
-        content.innerHTML = `
-            <div style="background:var(--surface); padding:16px; border-radius:12px;">
-                <input type="text" id="calcDisplay" disabled style="width:100%; font-size:24px; text-align:right; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); margin-bottom:16px;">
-                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
-                    ${['7','8','9','/','4','5','6','*','1','2','3','-','C','0','=','+'].map(btn => `
-                        <button onclick="calcClick('${btn}')" style="padding:16px; font-size:18px; border-radius:8px; border:none; background:${['/','*','-','+','='].includes(btn) ? 'var(--primary)' : 'var(--surface)'}; color:${['/','*','-','+','='].includes(btn) ? '#fff' : 'var(--text)'}; border:1px solid var(--border); cursor:pointer; transition:0.2s;">${btn}</button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-        window.calcClick = (btn) => {
-            const display = document.getElementById('calcDisplay');
-            if (btn === 'C') display.value = '';
-            else if (btn === '=') {
-                try { display.value = eval(display.value); } catch(e) { display.value = 'Error'; }
-            } else {
-                display.value += btn;
-            }
-        };
-    }
-    else if (toolName === 'dictionary') {
-        title.innerHTML = '📖 AI Dictionary';
-        content.innerHTML = `
-            <div style="display:flex; gap:12px; margin-bottom:16px;">
-                <input type="text" id="dictInput" placeholder="Enter a word to define..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline:none;" onkeydown="if(event.key==='Enter')fetchDictionary()">
-                <button onclick="fetchDictionary()" class="btn" style="padding:0 24px;">Search</button>
-            </div>
-            <div id="dictOutput" style="min-height:100px; color:var(--text); line-height:1.6;"></div>
-        `;
-        window.fetchDictionary = async () => {
-            const word = document.getElementById('dictInput').value.trim();
-            if(!word) return;
-            const out = document.getElementById('dictOutput');
-            out.innerHTML = `<i class="fas fa-spinner fa-spin" style="color:var(--primary);"></i> Searching...`;
-            try {
-                const prompt = `Give me the dictionary definition, origin, and 1 example sentence for the word: "${word}". Make it concise.`;
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                const text = await res.text();
-                out.innerHTML = text.replace(/\\n/g, '<br>');
-            } catch(e) { out.innerHTML = `<span style="color:#ef4444;">Failed to fetch definition.</span>`; }
-        };
-    }
-    else if (toolName === 'converter') {
-        title.innerHTML = '🔄 Converter';
-        content.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:16px;">
-                <div style="background:var(--surface); padding:16px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-weight:600; margin-bottom:8px;">Temperature (C to F)</div>
-                    <div style="display:flex; gap:12px;"><input type="number" id="convTemp" placeholder="Celsius" style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border); background:var(--bg); color:var(--text);"><button onclick="document.getElementById('convTempOut').innerText = (document.getElementById('convTemp').value * 9/5 + 32).toFixed(2) + ' °F'" class="btn">Convert</button><div id="convTempOut" style="flex:1; padding:8px; display:flex; align-items:center;"></div></div>
-                </div>
-                <div style="background:var(--surface); padding:16px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-weight:600; margin-bottom:8px;">Length (Meters to Feet)</div>
-                    <div style="display:flex; gap:12px;"><input type="number" id="convLen" placeholder="Meters" style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border); background:var(--bg); color:var(--text);"><button onclick="document.getElementById('convLenOut').innerText = (document.getElementById('convLen').value * 3.28084).toFixed(2) + ' ft'" class="btn">Convert</button><div id="convLenOut" style="flex:1; padding:8px; display:flex; align-items:center;"></div></div>
-                </div>
-                <div style="background:var(--surface); padding:16px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-weight:600; margin-bottom:8px;">Weight (Kg to Lbs)</div>
-                    <div style="display:flex; gap:12px;"><input type="number" id="convWt" placeholder="Kilograms" style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border); background:var(--bg); color:var(--text);"><button onclick="document.getElementById('convWtOut').innerText = (document.getElementById('convWt').value * 2.20462).toFixed(2) + ' lbs'" class="btn">Convert</button><div id="convWtOut" style="flex:1; padding:8px; display:flex; align-items:center;"></div></div>
-                </div>
-            </div>
-        `;
-    }
-    else if (toolName === 'timer') {
-        title.innerHTML = '⏱️ Study Timer';
-        content.innerHTML = `
-            <div style="text-align:center;">
-                <div id="timerDisplay" style="font-size:64px; font-weight:800; font-family:monospace; color:var(--primary); margin:24px 0;">25:00</div>
-                <div style="display:flex; justify-content:center; gap:12px; margin-bottom:24px;">
-                    <button class="btn" onclick="startTimer()">Start</button>
-                    <button class="btn btn-outline" onclick="pauseTimer()">Pause</button>
-                    <button class="btn btn-outline" onclick="resetTimer()">Reset</button>
-                </div>
-                <div style="display:flex; justify-content:center; gap:12px;">
-                    <button class="btn" style="background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="setTimer(25)">25 Min (Pomodoro)</button>
-                    <button class="btn" style="background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="setTimer(5)">5 Min (Break)</button>
-                </div>
-            </div>
-        `;
-        if(!window.timerInit) {
-            window.timerInit = true;
-            window.timerInt = null;
-            window.timerSeconds = 25 * 60;
-            window.updateTimerDisplay = () => {
-                const m = Math.floor(window.timerSeconds/60).toString().padStart(2, '0');
-                const s = (window.timerSeconds%60).toString().padStart(2, '0');
-                const d = document.getElementById('timerDisplay');
-                if(d) d.innerText = `${m}:${s}`;
-            };
-            window.startTimer = () => {
-                if(window.timerInt) clearInterval(window.timerInt);
-                window.timerInt = setInterval(() => {
-                    if(window.timerSeconds > 0) { window.timerSeconds--; window.updateTimerDisplay(); }
-                    else { clearInterval(window.timerInt); alert("Time's up!"); }
-                }, 1000);
-            };
-            window.pauseTimer = () => clearInterval(window.timerInt);
-            window.resetTimer = () => { clearInterval(window.timerInt); window.updateTimerDisplay(); };
-            window.setTimer = (m) => { clearInterval(window.timerInt); window.timerSeconds = m * 60; window.updateTimerDisplay(); };
-        }
-        window.updateTimerDisplay();
-    }
-    else if (toolName === 'planner') {
-        title.innerHTML = '📅 Daily Planner';
-        content.innerHTML = `
-            <div style="display:flex; gap:12px; margin-bottom:24px;">
-                <input type="text" id="plannerInput" placeholder="Add a new task..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline:none;" onkeydown="if(event.key==='Enter')addPlannerTask()">
-                <button onclick="addPlannerTask()" class="btn" style="padding:0 24px;">Add</button>
-            </div>
-            <div id="plannerList" style="display:flex; flex-direction:column; gap:8px;"></div>
-        `;
-        window.renderPlanner = () => {
-            const list = document.getElementById('plannerList');
-            const tasks = JSON.parse(localStorage.getItem('atis_planner') || '[]');
-            list.innerHTML = tasks.map((t, i) => `
-                <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="togglePlannerTask(${i})">
-                        <i class="fa${t.done ? 's' : 'r'} fa-check-circle" style="color:${t.done ? 'var(--success)' : 'var(--muted)'}; font-size:18px;"></i>
-                        <span style="color:var(--text); text-decoration:${t.done ? 'line-through' : 'none'}; opacity:${t.done ? '0.5' : '1'};">${t.text}</span>
+            <div class="notes-container">
+              <!-- Notes Reader -->
+              <div class="card notes-text-card" id="notesContent">
+                <h3>Select a topic for AI-generated notes.</h3>
+              </div>
+              
+              <!-- Flashcards Pane -->
+              <div class="flashcards-panel">
+                <div class="section-title" style="margin-bottom:0">🃏 Flashcards Deck</div>
+                <div class="flashcard-container" id="flashcardContainer" onclick="flipFlashcard()">
+                  <div class="flashcard">
+                    <div class="flashcard-side front">
+                      <div class="flashcard-label">Front</div>
+                      <div class="flashcard-text" id="fcFront">Select a notes topic first.</div>
+                      <div class="flashcard-action">Click to flip</div>
                     </div>
-                    <button onclick="deletePlannerTask(${i})" style="background:transparent; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                </div>
-            `).join('');
-        };
-        window.addPlannerTask = () => {
-            const input = document.getElementById('plannerInput');
-            if(!input.value.trim()) return;
-            const tasks = JSON.parse(localStorage.getItem('atis_planner') || '[]');
-            tasks.push({text: input.value.trim(), done: false});
-            localStorage.setItem('atis_planner', JSON.stringify(tasks));
-            input.value = '';
-            renderPlanner();
-        };
-        window.togglePlannerTask = (i) => {
-            const tasks = JSON.parse(localStorage.getItem('atis_planner') || '[]');
-            tasks[i].done = !tasks[i].done;
-            localStorage.setItem('atis_planner', JSON.stringify(tasks));
-            renderPlanner();
-        };
-        window.deletePlannerTask = (i) => {
-            const tasks = JSON.parse(localStorage.getItem('atis_planner') || '[]');
-            tasks.splice(i, 1);
-            localStorage.setItem('atis_planner', JSON.stringify(tasks));
-            renderPlanner();
-        };
-        renderPlanner();
-    }
-    else if (toolName === 'flashcards') {
-        title.innerHTML = '🃏 AI Flashcards';
-        content.innerHTML = `
-            <div style="display:flex; gap:12px; margin-bottom:24px;">
-                <input type="text" id="flashcardInput" placeholder="Enter a subject (e.g. Biology, World War 2)..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline:none;" onkeydown="if(event.key==='Enter')generateFlashcards()">
-                <button onclick="generateFlashcards()" class="btn" style="padding:0 24px;">Generate</button>
-            </div>
-            <div id="flashcardOutput" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:40px;">Enter a subject to generate interactive study cards.</div>
-            </div>
-        `;
-        window.generateFlashcards = async () => {
-            const subject = document.getElementById('flashcardInput').value.trim();
-            if(!subject) return;
-            const out = document.getElementById('flashcardOutput');
-            out.innerHTML = `<div style="grid-column:1/-1; text-align:center;"><i class="fas fa-spinner fa-spin" style="color:var(--primary);"></i> Generating 4 flashcards...</div>`;
-            try {
-                const prompt = `Generate 4 study flashcards about ${subject}. Return ONLY a valid JSON array of objects with keys 'front' (the term or question) and 'back' (the definition or answer).`;
-                let success = false;
-                let attempts = 0;
-                let cards = null;
-                while(!success && attempts < 3) {
-                    attempts++;
-                    try {
-                        const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                        let text = await res.text();
-                        let cleanText = text.replace(/\\`\\`\\`json/g, '').replace(/\\`\\`\\`/g, '').trim();
-                        let startIdx = cleanText.indexOf('[');
-                        let endIdx = cleanText.lastIndexOf(']');
-                        if (startIdx !== -1 && endIdx !== -1) {
-                            cleanText = cleanText.substring(startIdx, endIdx + 1);
-                            cards = JSON.parse(cleanText);
-                            success = true;
-                        }
-                    } catch(e) {}
-                }
-                if(!success) throw new Error();
-                
-                out.innerHTML = cards.map(c => `
-                    <div style="perspective:1000px; height:150px; cursor:pointer;" onclick="this.querySelector('.flip-inner').style.transform = this.querySelector('.flip-inner').style.transform === 'rotateY(180deg)' ? '' : 'rotateY(180deg)'">
-                        <div class="flip-inner" style="position:relative; width:100%; height:100%; transition:transform 0.6s; transform-style:preserve-3d;">
-                            <div style="position:absolute; width:100%; height:100%; backface-visibility:hidden; background:var(--surface); border:1px solid var(--border); border-radius:12px; display:flex; align-items:center; justify-content:center; padding:16px; text-align:center; font-weight:600; color:var(--primary);">
-                                ${c.front}
-                            </div>
-                            <div style="position:absolute; width:100%; height:100%; backface-visibility:hidden; background:var(--primary); color:#fff; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:16px; text-align:center; font-size:13px; transform:rotateY(180deg);">
-                                ${c.back}
-                            </div>
-                        </div>
+                    <div class="flashcard-side back">
+                      <div class="flashcard-label">Back</div>
+                      <div class="flashcard-text" id="fcBack">Flashcard explanation...</div>
+                      <div class="flashcard-action">Click to flip back</div>
                     </div>
-                `).join('');
-            } catch(e) { out.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; text-align:center;">Failed to generate flashcards. Please try again.</div>`; }
-        };
-    }
-    else if (toolName === 'mindmap') {
-        title.innerHTML = '🗺️ AI Mind Map (Outline)';
-        content.innerHTML = `
-            <div style="display:flex; gap:12px; margin-bottom:24px;">
-                <input type="text" id="mindmapInput" placeholder="Enter a core concept to map out..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline:none;" onkeydown="if(event.key==='Enter')generateMindMap()">
-                <button onclick="generateMindMap()" class="btn" style="padding:0 24px;">Map It</button>
-            </div>
-            <div id="mindmapOutput" style="background:var(--surface); padding:20px; border-radius:12px; border:1px solid var(--border); color:var(--text); line-height:1.6; min-height:200px;">
-                <div style="text-align:center; color:var(--muted); padding:40px;">Enter a concept to see its hierarchical breakdown.</div>
-            </div>
-        `;
-        window.generateMindMap = async () => {
-            const concept = document.getElementById('mindmapInput').value.trim();
-            if(!concept) return;
-            const out = document.getElementById('mindmapOutput');
-            out.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner fa-spin" style="color:var(--primary);"></i> Analyzing concept...</div>`;
-            try {
-                const prompt = `Create a hierarchical mind map outline for the concept: "${concept}". Use markdown bullet points with standard indentation to show the branches and sub-branches. Be extremely concise.`;
-                const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-                const text = await res.text();
-                let html = text.replace(/\n/g, '<br>').replace(/\*\*/g, '<b>').replace(/\*/g, '');
-                out.innerHTML = `<div style="font-family:monospace; font-size:14px;">${html}</div>`;
-            } catch(e) { out.innerHTML = `<div style="color:#ef4444;">Failed to generate mind map.</div>`; }
-        };
-    }
-    else if (toolName === 'export') {
-        title.innerHTML = '📤 Export Data';
-        content.innerHTML = `
-            <div style="text-align:center; padding:20px;">
-                <div style="font-size:48px; margin-bottom:16px;">📦</div>
-                <div style="font-weight:600; font-size:18px; margin-bottom:8px;">Backup Your Data</div>
-                <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Download a JSON file containing your profile info, planner tasks, and saved notepad data.</p>
-                <button class="btn" onclick="executeExport()" style="padding:12px 32px;"><i class="fas fa-download" style="margin-right:8px;"></i> Download Backup</button>
-            </div>
-        `;
-        window.executeExport = () => {
-            const data = {
-                student: localStorage.getItem('atis_student'),
-                grade: localStorage.getItem('atis_grade'),
-                notes: localStorage.getItem('atis_notepad'),
-                planner: localStorage.getItem('atis_planner')
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'ATIS_Backup.json';
-            a.click();
-        };
-    }
-    else if (toolName === 'help') {
-        title.innerHTML = '❓ Help & Cheat Sheet';
-        content.innerHTML = `
-            <div style="color:var(--text); line-height:1.6; font-size:14px;">
-                <h3 style="color:var(--primary); margin-bottom:8px;">Getting Started</h3>
-                <p style="margin-bottom:16px; color:var(--muted);">ATIS is your personal AI tutor. Use the sidebar to navigate between different features.</p>
+                  </div>
+                </div>
                 
-                <h3 style="color:var(--primary); margin-bottom:8px;">Dashboard (Chat)</h3>
-                <p style="margin-bottom:16px; color:var(--muted);">Ask any question. To quickly generate a quiz, type "Quiz me on [Topic]".</p>
-                
-                <h3 style="color:var(--primary); margin-bottom:8px;">Assignments</h3>
-                <p style="margin-bottom:16px; color:var(--muted);">Search a topic to generate an interactive Essay, Quiz, or Project. You can submit them for instant AI auto-grading!</p>
-                
-                <h3 style="color:var(--primary); margin-bottom:8px;">Practice Papers</h3>
-                <p style="margin-bottom:16px; color:var(--muted);">Generate full-length exams (MCQ + Written) and either take them interactively or download them as a PDF.</p>
-                
-                <h3 style="color:var(--primary); margin-bottom:8px;">Study Tools</h3>
-                <p style="margin-bottom:16px; color:var(--muted);">Access your Notepad, Planner, AI Flashcards, and more from this grid. Changes are saved automatically.</p>
+                <div class="deck-controls">
+                  <button class="deck-btn" onclick="prevFlashcard()" title="Previous"><i class="fas fa-chevron-left"></i></button>
+                  <span class="deck-info" id="deckInfo">0 / 0</span>
+                  <button class="deck-btn" onclick="nextFlashcard()" title="Next"><i class="fas fa-chevron-right"></i></button>
+                </div>
+              </div>
             </div>
-        `;
-    }
-}
+          </div>
 
-function closeTool() {
-    const modal = document.getElementById('toolModal');
-    modal.style.opacity = '0';
-    setTimeout(() => modal.style.display = 'none', 300);
-}
+          <!-- ASSIGNMENTS -->
+          <div class="pane" id="pane-assignments">
+            <div class="section-title">📋 Assignments & Practice Tasks</div>
+            <div class="search-notes-wrapper" style="margin-bottom: 24px; max-width: 920px; display:flex;flex-direction:column;gap:14px;">
+              <div class="input-group" style="display:flex;gap:12px;flex-wrap:wrap;">
+                <input type="text" id="assignmentsSearchInput" placeholder="Search assignments by topic, subject, or keyword..." onkeydown="if(event.key==='Enter') searchAssignmentsTopic()" style="flex:1;min-width:220px;padding:12px 18px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);outline:none;font-size:14px;">
+                <button class="btn" onclick="searchAssignmentsTopic()"><i class="fas fa-search"></i> Search Tasks</button>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                <select id="assignmentModelSelect" style="padding:12px 16px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);outline:none;min-width:200px;">
+                  <option value="auto">Auto AI Model</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini">Gemini</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="ollama">Ollama (Local)</option>
+                </select>
+                <input type="text" id="assignmentModelName" placeholder="Custom model name (optional)" style="flex:1;min-width:220px;padding:12px 18px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);outline:none;font-size:14px;">
+                <span id="assignmentsSearchStatus" style="font-size:13px;color:var(--muted);margin-left:auto;white-space:nowrap;"></span>
+              </div>
+            </div>
+            <div class="grid" id="assignmentsList" style="grid-template-columns:1fr">
+              <!-- Loaded dynamically -->
+            </div>
+            
+            <!-- Quiz Overlay screen in panel -->
+            <div class="pane" id="quizPane" style="display:none;animation:fadeUp 0.4s ease;margin-top:32px">
+              <div class="quiz-container">
+                <div class="quiz-header">
+                  <button class="btn btn-sm btn-outline" onclick="exitQuiz()"><i class="fas fa-arrow-left"></i> Exit Quiz</button>
+                  <div class="quiz-progress-bar">
+                    <div class="quiz-progress-fill" id="quizProgress"></div>
+                  </div>
+                  <span class="deck-info" id="quizProgressText">Q 1 / 3</span>
+                </div>
+                
+                <div class="quiz-question-card">
+                  <div class="quiz-question-text" id="quizQuestion">Loading question...</div>
+                  <div class="quiz-options" id="quizOptions">
+                    <!-- Dynamic -->
+                  </div>
+                  
+                  <div class="quiz-feedback-card hidden" id="quizFeedback">
+                    <div class="quiz-feedback-title" id="quizFeedbackTitle">Feedback</div>
+                    <div class="quiz-feedback-desc" id="quizFeedbackDesc">Details...</div>
+                  </div>
+                </div>
+                
+                <div class="quiz-actions">
+                  <button class="btn btn-sm btn-outline" onclick="getQuizHint()"><i class="fas fa-lightbulb"></i> Get Hint</button>
+                  <button class="btn btn-sm" id="quizNextBtn" onclick="nextQuizQuestion()">Next Question <i class="fas fa-chevron-right"></i></button>
+                </div>
+                
+                <div id="quizHintDisplay"></div>
+              </div>
+            </div>
+          </div>
 
-let recognition=null,isListening=false;
-function toggleVoice(){const btn=document.getElementById('voiceBtn'),st=document.getElementById('voiceStatus');if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){st.textContent='Not supported';return}if(isListening){recognition.stop();isListening=false;btn.textContent='Start Listening';return}recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();recognition.lang='en-US';recognition.onresult=e=>{st.textContent='You said: '+e.results[0][0].transcript;document.getElementById('chatInput').value=e.results[0][0].transcript;sendChat()};recognition.onend=()=>{isListening=false;btn.textContent='Start Listening'};recognition.start();isListening=true;btn.textContent='⏹ Stop';st.textContent='Listening...'}
+          <!-- STUDY TOOLS -->
+          <div class="pane" id="pane-tools">
+            <div class="section-title">🛠️ Active Study Workspace</div>
+            <div class="tools-container">
+              <!-- Circular Pomodoro Timer -->
+              <div class="tool-panel-card">
+                <div class="tool-header"><i class="fas fa-stopwatch" style="color:var(--primary)"></i> Pomodoro Timer</div>
+                <div class="timer-display">
+                  <svg class="timer-svg" viewBox="0 0 160 160">
+                    <circle class="timer-bg-circle" cx="80" cy="80" r="70"></circle>
+                    <circle class="timer-fill-circle" id="timerFill" cx="80" cy="80" r="70"></circle>
+                  </svg>
+                  <div class="timer-time" id="timerTime">25:00</div>
+                </div>
+                <div class="timer-controls">
+                  <button class="btn btn-sm" id="timerStartBtn" onclick="toggleTimer()">Start Focus</button>
+                  <button class="btn btn-sm btn-outline" onclick="resetTimer()">Reset</button>
+                </div>
+              </div>
 
-function saveModel() {
-    selectedModel = document.getElementById('modelSelect').value;
-    selectedModelName = document.getElementById('modelName').value.trim();
-    selectedTone = document.getElementById('toneSelect').value;
-    selectedLanguage = document.getElementById('langSelect').value;
-    
-    localStorage.setItem('atis_model', selectedModel);
-    localStorage.setItem('atis_modelName', selectedModelName);
-    localStorage.setItem('atis_tone', selectedTone);
-    localStorage.setItem('atis_language', selectedLanguage);
-    
-    document.getElementById('kpiModel').textContent = selectedModel === 'auto' ? 'Auto' : selectedModel;
-    
-    let toast = document.getElementById('saveToast');
-    if(!toast) {
-        toast = document.createElement('div');
-        toast.id = 'saveToast';
-        toast.style.cssText = 'position:fixed; bottom:20px; right:20px; background:var(--success); color:#fff; padding:12px 24px; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:99999; font-weight:600; opacity:0; transition:opacity 0.3s; pointer-events:none;';
-        toast.innerText = '✅ Settings Saved!';
-        document.body.appendChild(toast);
-    }
-    toast.style.opacity = '1';
-    setTimeout(() => toast.style.opacity = '0', 2500);
-}
+              <!-- notepad editor -->
+              <div class="tool-panel-card">
+                <div class="tool-header"><i class="fas fa-edit" style="color:var(--accent)"></i> Quick Notes Workspace</div>
+                <textarea class="notepad-textarea" id="notepadArea" placeholder="Draft study outlines, answer briefs, or quick formulas here. Saves automatically..." oninput="saveNotepad()"></textarea>
+                <div class="notepad-status" id="notepadStatus">Saved locally</div>
+              </div>
 
-window.addEventListener('DOMContentLoaded',()=>{if(student){enterApp()}else{showScreen('welcome')}});
-</script>
+              <!-- concept mind map -->
+              <div class="tool-panel-card">
+                <div class="tool-header"><i class="fas fa-sitemap" style="color:var(--teal)"></i> Topic Mind Map</div>
+                <div class="mindmap-outline" id="mindmapOutline">
+                  <div class="mindmap-node root">AI Teacher Assistant</div>
+                  <ul>
+                    <li class="mindmap-node">Select a topic in Diagrams or Notes</li>
+                    <li class="mindmap-node">A conceptual layout will appear here</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-title" style="margin-top:40px">⚙️ Utilities</div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))">
+              <button class="btn btn-outline" onclick="clearChat()"><i class="fas fa-trash-alt"></i> Clear Chat</button>
+              <button class="btn btn-outline" onclick="exportStudentData()"><i class="fas fa-file-export"></i> Export Profile</button>
+              <button class="btn btn-outline" onclick="switchPane('settings', document.querySelectorAll('.nav-btn')[7])"><i class="fas fa-cog"></i> Config Options</button>
+            </div>
+          </div>
+
+          <!-- SETTINGS -->
+          <div class="pane" id="pane-settings">
+            <div class="section-title">⚙️ AI Settings</div>
+            <div class="card" style="max-width:560px">
+              <div class="field">
+                <label>AI Model Provider</label>
+                <select id="modelSelect" onchange="saveModel()">
+                  <option value="auto">⚙️ Auto (Recommended)</option>
+                  <option value="openai">🤖 OpenAI</option>
+                  <option value="gemini">🌀 Gemini</option>
+                  <option value="deepseek">🧠 DeepSeek</option>
+                  <option value="ollama">🦙 Ollama (Local)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Custom Model Name</label>
+                <input id="modelName" placeholder="e.g. gpt-4o, gemini-pro" oninput="saveModel()">
+              </div>
+              <p style="color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:20px">
+                Settings are saved instantly inside local cache storage. The auto mode will query providers in order of config variables.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAT PANEL -->
+        <div class="chat">
+          <div class="chat-header">
+            <h3>💬 AI Assistant</h3>
+            <small>Ask me anything about your subjects</small>
+          </div>
+          <div class="messages" id="chatBox">
+            <div class="msg ai">👋 Hello! I'm your AI Teacher. Ask me anything to start learning!</div>
+          </div>
+          <div class="chat-input">
+            <input id="chatInput" placeholder="Type your question..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Correct/Incorrect Splash Flash Overlay -->
+  <div class="quiz-splash" id="quizSplash"></div>
+
+  <!-- Load logic -->
+  <script src="/frontend/app.js"></script>
 </body>
 </html>
